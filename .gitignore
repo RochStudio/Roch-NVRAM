@@ -1,0 +1,19 @@
+# Python virtual environment (rebuilt via install.bat)
+.venv/
+# Byte-compiled / cache
+__pycache__/
+*.py[cod]
+*$py.class
+# Old / generated output
+exports/
+# PyInstaller build output
+build/
+dist/
+*.spec
+# OS / editor cruft
+Thumbs.db
+.DS_Store
+# Claude Code local tooling config (machine-specific permission allowlist)
+.claude/
+# Sample NVRAM dumps (board-specific; needed only for offline/dry-run mode)
+data/
