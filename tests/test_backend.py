@@ -1,0 +1,74 @@
+from __future__ import annotations
+
+import tempfile
+import unittest
+from pathlib import Path
+
+from bios_manager.core import ParsedProfile, ScewinDocument, ValidationError
+from bios_manager.scewin_backend import (
+    remap_changes,
+    verify_changes,
+    write_live_profile,
+)
+
+
+ROOT = Path(__file__).resolve().parents[1]
+PROFILE = ROOT / "data" / "z890_tachyon_nvram_parsed.json"
+NVRAM = ROOT / "data" / "z890_tachyon_nvram.txt"
+DUPES = ROOT / "data" / "z890_tachyon_Dupes.txt"
+
+
+class BackendTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.profile = ParsedProfile.load(PROFILE)
+        cls.document = ScewinDocument(NVRAM)
+        cls.by_name = {
+            item.get("question"): item for item in cls.profile.settings
+        }
+
+    def test_live_profile_generation(self):
+        with tempfile.TemporaryDirectory() as temp:
+            output = Path(temp) / "live.json"
+            write_live_profile(NVRAM, DUPES, output)
+            profile = ParsedProfile.load(output)
+            self.assertEqual(profile.hii_crc32, "B176E215")
+            self.assertEqual(len(profile.settings), 8299)
+            self.assertEqual(profile.settings[0]["question"], "Multi-Theme")
+            self.assertEqual(profile.label, "NVRAM")
+
+    def test_remap_unchanged_setting(self):
+        setting = self.by_name["Extreme Memory Profile(X.M.P.)"]
+        queued = self.document.build_change(self.profile, setting["export_id"], "05")
+        remapped = remap_changes(
+            self.profile, self.profile, self.document, [queued]
+        )
+        self.assertEqual(len(remapped), 1)
+        self.assertEqual(remapped[0].new_raw, "05")
+
+    def test_remap_rejects_stale_value(self):
+        setting = self.by_name["Extreme Memory Profile(X.M.P.)"]
+        queued = self.document.build_change(self.profile, setting["export_id"], "05")
+        changed_profile = ParsedProfile.load(PROFILE)
+        changed_setting = changed_profile.by_id()[setting["export_id"]]
+        changed_setting["current_code_hex"] = "05"
+        changed_setting["current_label"] = "User Profile"
+        with self.assertRaises(ValidationError):
+            remap_changes(
+                self.profile, changed_profile, self.document, [queued]
+            )
+
+    def test_verification(self):
+        setting = self.by_name["Extreme Memory Profile(X.M.P.)"]
+        queued = self.document.build_change(self.profile, setting["export_id"], "05")
+        self.assertTrue(verify_changes(self.profile, [queued]))
+
+        verified_profile = ParsedProfile.load(PROFILE)
+        verified_setting = verified_profile.by_id()[setting["export_id"]]
+        verified_setting["current_code_hex"] = "05"
+        verified_setting["current_label"] = "User Profile"
+        self.assertEqual(verify_changes(verified_profile, [queued]), [])
+
+
+if __name__ == "__main__":
+    unittest.main()
