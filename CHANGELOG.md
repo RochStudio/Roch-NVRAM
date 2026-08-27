@@ -1,5 +1,23 @@
 # Changelog
 
+## Unreleased
+
+- Fixed an import file that could carry **two selected options** for one setting. The
+  writer stopped scanning an Options block at the first unindented row and left that
+  row's `*` in place; reader and writer now share one rule for what an option row is.
+- Fixed a queued option change being **silently discarded** when two option codes share
+  the same label. The editor compared displayed text; it now compares raw values.
+- Values that a SCEWIN export's Latin-1 encoding cannot store are refused when queued,
+  instead of raising an unhandled error part-way through Apply.
+- Missing, unreadable, or malformed profiles and exports now report a normal error
+  dialog. They previously escaped every handler and, because the launchers use
+  `pythonw.exe`, closed the app with no window and no message.
+- Offline mode now says which sample files are missing instead of exiting silently when
+  `data/` is absent, which is the normal state of a fresh clone.
+- Compare no longer reports a spurious change for records that carry no token, offset,
+  or width; two identical files now compare as unchanged.
+- Added `tests/test_regressions.py`, 13 tests that need no sample export.
+
 ## v0.2.0
 
 - Renamed the application to **Roch NVRAM** and added an application icon.

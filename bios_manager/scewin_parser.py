@@ -29,6 +29,47 @@ OPTION_RE = re.compile(
 ENUM_RE = re.compile(r"^\[(?P<code>[0-9A-Fa-f]+)\](?P<label>.*)$")
 VALUE_RE = re.compile(r"^<(?P<value>[^>]*)>")
 
+OPTIONS_PREFIX = "Options\t="
+FIELD_PREFIXES = (
+    "Setup Question\t=",
+    "Help String\t=",
+    "Token\t=",
+    "Offset\t=",
+    "Width\t=",
+    "BIOS Default\t=",
+    "Value\t=",
+)
+
+
+def option_line_indexes(lines: list[str]) -> list[int]:
+    """Indexes of the lines that make up a record's Options block.
+
+    The reader (parse_record) and the writer (core._modify_block) must agree on
+    this exactly. When the writer scanned fewer lines than the reader listed it
+    left a stale '*' behind and produced an import record with two selected
+    options, so the rule lives here once and both call it.
+
+    A row belongs to the block from the "Options\t=" line until the first blank
+    line or the first line that starts another record field. Indentation is not
+    part of the rule: AMISCE indents continuation rows, but a row at column 0 is
+    still a row.
+    """
+    indexes: list[int] = []
+    in_options = False
+    for index, line in enumerate(lines):
+        if line.startswith(OPTIONS_PREFIX):
+            in_options = True
+            indexes.append(index)
+        elif any(line.startswith(prefix) for prefix in FIELD_PREFIXES):
+            in_options = False
+        elif not in_options:
+            continue
+        elif not line.strip():
+            in_options = False
+        else:
+            indexes.append(index)
+    return indexes
+
 
 def sha256_file(path: Path) -> str:
     digest = hashlib.sha256()
@@ -169,34 +210,50 @@ def parse_record(
     hii_crc32: str | None,
 ) -> BiosSetting:
     setting = BiosSetting(source=source)
-    in_options = False
+    # Option-block membership is decided by the shared rule so the reader and the
+    # writer in core._modify_block can never disagree about which rows are options.
+    option_lines = set(option_line_indexes(block))
 
-    for line in block:
-        if line.startswith("Setup Question\t="):
+    for index, line in enumerate(block):
+        if index in option_lines:
+            header = line.startswith(OPTIONS_PREFIX)
+            if header:
+                setting.kind = "options"
+            match = OPTION_RE.match(line.split("\t=", 1)[1] if header else line)
+            if match:
+                setting.options.append(
+                    BiosOption(
+                        code_hex=match.group("code").upper(),
+                        code=int(match.group("code"), 16),
+                        label=match.group("label").strip(),
+                        selected=bool(match.group("selected")),
+                    )
+                )
+            else:
+                setting.warnings.append(
+                    "unparsed_options_header" if header else "unparsed_option_line"
+                )
+
+        elif line.startswith("Setup Question\t="):
             setting.question = line.split("\t=", 1)[1].strip()
-            in_options = False
 
         elif line.startswith("Help String\t="):
             setting.help = line.split("\t=", 1)[1].strip()
-            in_options = False
 
         elif line.startswith("Token\t="):
             value = line.split("\t=", 1)[1].split("//", 1)[0].strip().upper()
             setting.token_hex = value
             setting.token = parse_hex(value)
-            in_options = False
 
         elif line.startswith("Offset\t="):
             value = line.split("\t=", 1)[1].strip().upper()
             setting.offset_hex = value
             setting.offset = parse_hex(value)
-            in_options = False
 
         elif line.startswith("Width\t="):
             value = line.split("\t=", 1)[1].strip().upper()
             setting.width_hex = value
             setting.width = parse_hex(value)
-            in_options = False
 
         elif line.startswith("BIOS Default\t="):
             value = line.split("\t=", 1)[1].strip()
@@ -213,47 +270,12 @@ def parse_record(
                 setting.bios_default_value = value_match.group("value")
             else:
                 setting.bios_default_type = "other"
-            in_options = False
 
         elif line.startswith("Value\t="):
             setting.kind = "value"
             value = line.split("\t=", 1)[1].strip()
             match = VALUE_RE.match(value)
             setting.current_value = match.group("value") if match else value
-            in_options = False
-
-        elif line.startswith("Options\t="):
-            setting.kind = "options"
-            option_text = line.split("\t=", 1)[1]
-            match = OPTION_RE.match(option_text)
-            if match:
-                setting.options.append(
-                    BiosOption(
-                        code_hex=match.group("code").upper(),
-                        code=int(match.group("code"), 16),
-                        label=match.group("label").strip(),
-                        selected=bool(match.group("selected")),
-                    )
-                )
-            else:
-                setting.warnings.append("unparsed_options_header")
-            in_options = True
-
-        elif in_options:
-            match = OPTION_RE.match(line)
-            if match:
-                setting.options.append(
-                    BiosOption(
-                        code_hex=match.group("code").upper(),
-                        code=int(match.group("code"), 16),
-                        label=match.group("label").strip(),
-                        selected=bool(match.group("selected")),
-                    )
-                )
-            elif not line.strip():
-                in_options = False
-            else:
-                setting.warnings.append("unparsed_option_line")
 
     if setting.kind == "unknown":
         setting.warnings.append("missing_value_or_options")

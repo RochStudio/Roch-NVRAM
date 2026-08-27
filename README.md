@@ -125,7 +125,11 @@ verifies every requested value. Backups and transaction files are stored under:
 
 ## Tests
 
-Run `run_tests.bat`. The 20-test suite covers parsing, source order, option and value edits,
+Run `run_tests.bat`. The suite covers parsing, source order, option and value edits,
 stale-value rejection, profile matching, verification, comparison results (including
 value-only matching), CSV export, the NVRAM catalog and its archiving, and protection against
 overwriting the source export.
+
+22 of the 33 tests are self-contained and run on a fresh clone. The 11 in `test_backend.py`
+and `test_core.py` load the board-specific sample export from `data/`, which is not tracked in
+git, and error out when it is absent.
