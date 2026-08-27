@@ -1,10 +1,27 @@
+# Roch NVRAM -- an editor for AMI SCEWIN NVRAM exports.
+# Copyright (C) 2026 Roch Studio
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 """Tests for the on-demand Export / Import round trip.
 
-The window no longer reads the firmware when it opens: Export NVRAM does that,
-and Import NVRAM writes a saved nvram.txt back. Both share the matching logic
-in MainWindow._differences_from, which is what these tests exercise. The tests
-that need PySide6 skip when it is not installed, because run_tests.bat uses the
-system interpreter rather than the .venv.
+The window no longer reads the firmware when it opens. Export reads the live
+NVRAM on demand, Import writes the reviewed queue back, and Load NVRAM fills
+that queue from a saved export through MainWindow._differences_from.
+
+The tests that need PySide6 skip when it is not installed, because
+run_tests.bat uses the system interpreter rather than the .venv.
 """
 from __future__ import annotations
 
@@ -88,7 +105,7 @@ def build_live(root: Path, records: str) -> tuple[ParsedProfile, ScewinDocument]
 
 @unittest.skipUnless(GUI_AVAILABLE, "PySide6 is not installed")
 class SavedNvramMatchingTests(unittest.TestCase):
-    """MainWindow._differences_from backs both Load NVRAM and Import NVRAM."""
+    """MainWindow._differences_from is what Load NVRAM queues from."""
 
     def differences(self, root: Path, saved_records: str) -> SavedNvramDiff:
         profile, document = build_live(root / "live", RECORDS)
@@ -233,6 +250,25 @@ class ButtonTests(unittest.TestCase):
         state = self.buttons()
         for label in ("Apply", "Export NVRAM", "Import NVRAM..."):
             self.assertNotIn(label, state)
+
+    def test_a_busy_cycle_leaves_disabled_actions_disabled(self):
+        # The window is disabled wholesale while SCEWIN runs. Restoring it must
+        # not enable buttons that have no NVRAM to act on.
+        with self.window._busy("working..."):
+            pass
+        self.assertFalse(self.buttons()["Import"])
+        self.assertTrue(self.buttons()["Export"])
+
+    def test_the_window_recovers_when_a_busy_block_raises(self):
+        from PySide6.QtWidgets import QApplication
+
+        with self.assertRaises(RuntimeError):
+            with self.window._busy("failing..."):
+                raise RuntimeError("boom")
+        # Otherwise the error dialog would open over a dead window under a
+        # wait cursor that nothing ever pops.
+        self.assertTrue(self.window.isEnabled())
+        self.assertIsNone(QApplication.overrideCursor())
 
     def test_offline_mode_offers_neither_export_nor_import(self):
         offline = MainWindow(None, None, backend=None)

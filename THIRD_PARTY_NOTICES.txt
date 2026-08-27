@@ -1,0 +1,65 @@
+Third-party components
+======================
+
+AMISCE / SCEWIN_64.exe, amifldrv64.sys, amigendrv64.sys  (bundled)
+------------------------------------------------------------------
+Roch NVRAM does not talk to the firmware itself. Every read and every write
+goes through AMISCE, the AMI Setup Configuration Extractor, shipped here as:
+
+  scewin/SCEWIN_64.exe      AMISCE Utility, Ver 5.05.01.0002
+  scewin/amifldrv64.sys     AMI kernel driver
+  scewin/amigendrv64.sys    AMI kernel driver
+
+  Copyright (c) American Megatrends International, LLC.
+
+These are proprietary AMI binaries, and the two .sys files are signed kernel
+drivers. They are not covered by this project's GPL-3.0 licence, no part of
+them was written here, and nothing in this repository grants any right to them.
+AMI distributes AMISCE to its customers rather than to the public; the copies
+here came from a vendor package that includes it -- MSI Center ships one.
+
+They are bundled for convenience. This project does not establish their
+authenticity or its own right to redistribute them, and anyone redistributing
+Roch NVRAM should satisfy themselves about that separately. If you would rather
+not take them on trust, delete the scewin/ folder and drop in the three files
+from a source you do trust: the paths and the expected filenames are in
+bios_manager/scewin_backend.py, and the application checks for all three and
+refuses to run live without them.
+
+The drivers are copied to %LOCALAPPDATA%\NVRAM\runtime on first use and loaded
+by SCEWIN itself. Roch NVRAM does not install a service and does not load them
+directly.
+
+SCEHUB  (followed, not bundled)
+-------------------------------
+  https://github.com/ab3lkaizen/SCEHUB  -- ab3lkaizen
+
+SCEHUB packages AMISCE with two batch files, Export.bat and Import.bat, which
+run it as "/o /s nvram.txt" and "/i /s nvram.txt": read the NVRAM to a text
+file, edit the text file, write it back. That is the workflow this program is
+built around, and the Export and Import buttons are those two halves.
+
+Roch NVRAM adds a review step between them. Import matches the queued changes
+against a fresh export, refuses to continue when anything moved, takes a backup
+and verifies every value afterwards -- Import.bat writes the file as it stands.
+
+No file from SCEHUB is included here, and it is not needed to run this.
+
+Roch Viewer  (companion project)
+--------------------------------
+  https://github.com/RochStudio/Roch-Viewer  -- Roch Studio
+
+The application icon is shared with Roch Viewer, and the repository conventions
+here -- the licence, the source headers, the .gitattributes -- follow the ones
+established there. Roch Viewer reads memory-controller and timing state and
+changes nothing; this program writes firmware settings. They are separate
+programs and neither requires the other.
+
+PySide6 / Qt  (dependency, not bundled in this repository)
+----------------------------------------------------------
+  Copyright (c) The Qt Company Ltd.
+  LGPL-3.0.
+
+The interface is PySide6. It is installed from PyPI by install.bat rather than
+committed here. LGPL-3.0 permits its use from a GPL-3.0 program, and it is
+used as an unmodified library through its public API.

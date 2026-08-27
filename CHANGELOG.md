@@ -1,6 +1,10 @@
 # Changelog
 
-## Unreleased
+## 1.0.0
+
+First public release. Licensed GPL-3.0-or-later; third-party components, including the
+bundled AMI binaries that licence does not cover, are listed in `THIRD_PARTY_NOTICES.txt`.
+
 
 ### Reading and writing the NVRAM
 
@@ -36,6 +40,17 @@
   or width; two identical files now compare as unchanged.
 
 ### Project
+
+- Licensed GPL-3.0-or-later, matching Roch Viewer. Added `LICENSE`, a source header to every
+  file, `THIRD_PARTY_NOTICES.txt`, and a GitHub Actions workflow that runs the suite on
+  Windows.
+- Credited SCEHUB, whose `Export.bat` / `Import.bat` pair this program is built around, and
+  Roch Viewer, the companion project it shares an icon and its conventions with.
+- Collapsed duplicated code: one `sha256_file` and one `raw_value` instead of two of each,
+  one routine for showing a freshly opened export instead of the same twelve lines in two
+  places, and a `_busy` context manager in place of a try/except/finally that restored the
+  window by inspecting the cursor stack. That last one also fixed the Import button
+  re-enabling itself after a failed export, with no NVRAM loaded.
 
 - The whole test suite now runs on a fresh clone. `test_backend.py` and `test_core.py` loaded a
   board-specific dump from the untracked `data/` folder, so 11 of the tests could not run for
