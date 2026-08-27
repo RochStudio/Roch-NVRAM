@@ -5,8 +5,8 @@
 ### Reading and writing the NVRAM
 
 - The app no longer reads the firmware when it opens. It starts with nothing loaded, and the
-  NVRAM tab offers the SCEWIN round trip as two buttons: **Export** reads the live NVRAM on
-  demand, and **Import** writes the queue you have reviewed. These are the halves SCEWIN itself
+  NVRAM tab leads with the SCEWIN round trip as two adjacent buttons: **Export** reads the live
+  NVRAM on demand, and **Import** writes the queue you have reviewed. These are the halves SCEWIN itself
   ships as `Export.bat` and `Import.bat`. Import is the former Apply button, with the same
   preflight, backup, and verification around the write.
 - **Load NVRAM...** queues the differences from a saved export, for example after a Clear CMOS,

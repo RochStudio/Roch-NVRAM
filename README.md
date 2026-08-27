@@ -55,9 +55,10 @@ Token, Offset, Width, BIOS Default, and Options/Value. Search across names, help
 offsets, and export IDs; filter by type or by editable/warning state.
 
 - **Export** reads the live NVRAM (live mode only).
+- **Import** writes the queue (live mode only). It sits beside Export: the two are the
+  round trip, and the editing controls follow them.
 - **Queue selected change** (or double-click a row) edits an entry.
 - **Load NVRAM...** queues the differences from a saved export without writing — see below.
-- **Import** writes the queue (live mode only).
 
 ## Load NVRAM
 

@@ -215,11 +215,13 @@ class ButtonTests(unittest.TestCase):
 
         return {b.text(): b.isEnabled() for b in self.window.findChildren(QPushButton)}
 
-    def test_the_nvram_tab_row_is_export_then_import(self):
+    def test_the_nvram_tab_row_leads_with_export_and_import(self):
         from PySide6.QtWidgets import QPushButton
 
         row = [b.text() for b in self.window.settings_table.parent().findChildren(QPushButton)]
-        self.assertEqual(row, ["Export", "Queue selected change", "Load NVRAM...", "Import"])
+        self.assertEqual(row, ["Export", "Import", "Queue selected change", "Load NVRAM..."])
+        # The two halves of the round trip sit together, ahead of the editing controls.
+        self.assertEqual(row.index("Import"), row.index("Export") + 1)
 
     def test_only_export_works_before_an_nvram_is_loaded(self):
         state = self.buttons()
