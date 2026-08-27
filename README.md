@@ -178,10 +178,6 @@ PySide6 says otherwise.
 - **[SCEHUB](https://github.com/ab3lkaizen/SCEHUB)** by ab3lkaizen — packages AMISCE with
   the `Export.bat` / `Import.bat` pair this program is built around. The Export and Import
   buttons are those two steps with a review in between.
-- **[Roch Viewer](https://github.com/RochStudio/Roch-Viewer)** — the companion project.
-  It reads memory-controller and timing state and changes nothing, where this one writes
-  firmware settings. The icon is shared, and the repository conventions here follow the
-  ones it established.
 - **AMISCE** is American Megatrends' utility. Every read and write goes through it; this
   project only decides what to ask it for.
 

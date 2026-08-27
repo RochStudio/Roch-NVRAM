@@ -51,11 +51,11 @@ bundled AMI binaries that licence does not cover, are listed in `THIRD_PARTY_NOT
   the executable's version resource is generated from it at build time rather than kept as a
   second copy, and `tests/test_version.py` holds the README and the changelog to it — including
   a check that no other module declares a `__version__` of its own.
-- Licensed GPL-3.0-or-later, matching Roch Viewer. Added `LICENSE`, a source header to every
+- Licensed GPL-3.0-or-later. Added `LICENSE`, a source header to every
   file, `THIRD_PARTY_NOTICES.txt`, and a GitHub Actions workflow that runs the suite on
   Windows.
 - Credited SCEHUB, whose `Export.bat` / `Import.bat` pair this program is built around, and
-  Roch Viewer, the companion project it shares an icon and its conventions with.
+  AMISCE, which performs every read and write.
 - Collapsed duplicated code: one `sha256_file` and one `raw_value` instead of two of each,
   one routine for showing a freshly opened export instead of the same twelve lines in two
   places, and a `_busy` context manager in place of a try/except/finally that restored the
@@ -67,7 +67,7 @@ bundled AMI binaries that licence does not cover, are listed in `THIRD_PARTY_NOT
   anyone who cloned the repository. They now read a small synthetic export committed at
   `tests/fixtures/nvram.txt`, and derive its parsed profile during the run instead of keeping a
   second copy in git. 46 tests, all passing.
-- The application icon is now the Roch Studio logo shared with Roch Viewer. Removed
+- The application icon is now the Roch Studio logo. Removed
   `tools/make_icon.py`, which drew the previous placeholder and would have silently reverted the
   logo if anyone ran it.
 - Added `.gitattributes`. Line-ending normalisation is now a property of the repository rather
