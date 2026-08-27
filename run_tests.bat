@@ -1,5 +1,15 @@
 @echo off
 setlocal
 cd /d "%~dp0"
-py -3 -m unittest discover -s tests -v
+
+rem Prefer the venv. It has PySide6, and 13 of the tests skip without it,
+rem so the system interpreter runs 35 of 48 and calls that a pass.
+if exist ".venv\Scripts\python.exe" (
+    ".venv\Scripts\python.exe" -m unittest discover -s tests -v
+) else (
+    echo .venv not found, using the system interpreter.
+    echo The PySide6 tests will report as skipped; run install.bat to include them.
+    echo.
+    py -3 -m unittest discover -s tests -v
+)
 pause
