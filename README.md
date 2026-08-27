@@ -156,12 +156,8 @@ file, not a board dump, keeping the record shapes real ones have. Its parsed pro
 generated during the run rather than committed beside it, so the two cannot drift apart.
 Nothing in the suite executes SCEWIN or touches firmware.
 
-13 of the tests need PySide6 and skip cleanly without it. `run_tests.bat` uses the system
-interpreter, so it reports them as skipped; run the suite from the venv to include them:
-
-```bash
-.venv\Scripts\python.exe -m unittest discover -s tests
-```
+13 of them need PySide6 and skip cleanly without it, so `run_tests.bat` uses `.venv` when
+it is there and falls back to the system interpreter with a note when it is not.
 
 ## Building
 

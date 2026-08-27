@@ -80,6 +80,9 @@ def is_windows_admin() -> bool:
     try:
         return bool(ctypes.windll.shell32.IsUserAnAdmin())
     except Exception:
+        # AttributeError where shell32 is missing, OSError where the call
+        # fails. Either way the answer is the same: assume not elevated and
+        # let ensure_ready refuse with a message the user can act on.
         return False
 
 
@@ -173,11 +176,9 @@ def verify_changes(profile: ParsedProfile, changes: Iterable[PendingChange]) -> 
         if setting is None:
             mismatches.append(f"{change.question}: missing from verification export")
             continue
-        actual = raw_value(setting)
-        expected = change.new_raw.upper() if change.kind == "options" else change.new_raw
-        if change.kind == "options":
-            actual = actual.upper()
-        if actual != expected:
+        # Both sides are already in the same form: raw_value upper-cases option
+        # codes, and build_change stores new_raw the same way.
+        if raw_value(setting) != change.new_raw:
             mismatches.append(
                 f"{change.question}: expected {change.new_display}, "
                 f"but live export reports {ScewinDocument.setting_display(setting)}"
