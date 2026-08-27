@@ -1,13 +1,28 @@
+# Roch NVRAM -- an editor for AMI SCEWIN NVRAM exports.
+# Copyright (C) 2026 Roch Studio
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 from __future__ import annotations
 
-import hashlib
 import json
 import re
 from dataclasses import dataclass, asdict
 from pathlib import Path
 from typing import Any, Iterable
 
-from .scewin_parser import option_line_indexes
+from .scewin_parser import option_line_indexes, sha256_file
 
 
 HII_RE = re.compile(r"^HIICrc32=\s*([0-9A-Fa-f]+)\s*$", re.MULTILINE)
@@ -107,12 +122,16 @@ class ParsedProfile:
         return {str(setting["export_id"]): setting for setting in self.settings}
 
 
-def sha256_file(path: str | Path) -> str:
-    digest = hashlib.sha256()
-    with Path(path).open("rb") as stream:
-        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
-            digest.update(chunk)
-    return digest.hexdigest()
+def raw_value(setting: dict[str, Any]) -> str:
+    """The value a setting actually holds, as SCEWIN writes it.
+
+    Options report their selected code, values report their text. This is what
+    comparisons and verification test; setting_display is what people read.
+    """
+    if setting.get("kind") == "options":
+        return str(setting.get("current_code_hex") or "").upper()
+    value = setting.get("current_value")
+    return "" if value is None else str(value)
 
 
 def read_latin1(path: str | Path) -> str:

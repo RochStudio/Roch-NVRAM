@@ -1,6 +1,23 @@
+# Roch NVRAM -- an editor for AMI SCEWIN NVRAM exports.
+# Copyright (C) 2026 Roch Studio
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 from __future__ import annotations
 
 import sys
+from contextlib import contextmanager
 from pathlib import Path
 from typing import Any, NamedTuple
 
@@ -43,13 +60,13 @@ from .compare_tools import (
     has_identity,
     identity_without_crc,
     load_snapshot,
-    raw_value,
 )
 from .core import (
     BiosManagerError,
     ParsedProfile,
     PendingChange,
     ScewinDocument,
+    raw_value,
     write_transaction,
 )
 from .scewin_backend import ApplyResult, LiveExport, ScewinBackend
@@ -494,7 +511,6 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.backend = backend
         self.live_mode = backend is not None
-        self.apply_buttons: list[QPushButton] = []
         self.loaded_buttons: list[QPushButton] = []
         app_root = backend.app_root if backend is not None else None
         self.logger = ActivityLogger(app_root)
@@ -630,7 +646,6 @@ class MainWindow(QMainWindow):
                 "verification pass run around the import."
             )
             import_button.clicked.connect(self.apply_changes)
-            self.apply_buttons.append(import_button)
             self.loaded_buttons.append(import_button)
             buttons.addWidget(import_button)
         edit = QPushButton("Queue selected change")
@@ -684,7 +699,6 @@ class MainWindow(QMainWindow):
                 "verification pass run around the import."
             )
             import_button.clicked.connect(self.apply_changes)
-            self.apply_buttons.append(import_button)
             self.loaded_buttons.append(import_button)
             buttons.addWidget(import_button)
         layout.addLayout(buttons)
@@ -1074,24 +1088,34 @@ class MainWindow(QMainWindow):
         )
         return False
 
-    def _set_busy(self, busy: bool, message: str = ""):
-        for button in self.apply_buttons:
-            button.setEnabled(not busy)
-        self.setEnabled(not busy)
-        if message:
-            self.statusBar().showMessage(message)
-        if busy:
-            QApplication.setOverrideCursor(Qt.WaitCursor)
-        else:
-            QApplication.restoreOverrideCursor()
-        QApplication.processEvents()
+    @contextmanager
+    def _busy(self, message: str):
+        """Disable the window and show a wait cursor while SCEWIN runs.
 
-    def _replace_live_export(self, live: LiveExport, source: str):
-        self.profile = live.profile
-        self.document = live.document
+        The window is restored on the way out, so it is already usable by the
+        time a caller reports an error: a message box is never raised over a
+        disabled window, and no cursor is left pushed if the call throws.
+        """
+        self.setEnabled(False)
+        self.statusBar().showMessage(message)
+        QApplication.setOverrideCursor(Qt.WaitCursor)
+        QApplication.processEvents()
+        try:
+            yield
+        finally:
+            QApplication.restoreOverrideCursor()
+            self.setEnabled(True)
+            self._update_loaded_actions()
+            self._update_status()
+            QApplication.processEvents()
+
+    def _show_nvram(self, profile: ParsedProfile, document: ScewinDocument, source: str):
+        """Put a freshly opened export in the table and catalogue it."""
+        self.profile = profile
+        self.document = document
         self.changes.clear()
         self.settings_model.beginResetModel()
-        self.settings_model.settings = self.profile.settings
+        self.settings_model.settings = profile.settings
         self.settings_model.endResetModel()
         self.change_model.refresh()
         self.filter_model.invalidateFilter()
@@ -1121,16 +1145,12 @@ class MainWindow(QMainWindow):
             )
             return None
         try:
-            self._set_busy(True, "Reading the live NVRAM through SCEWIN...")
-            return self.backend.export_current(tag)
+            with self._busy("Reading the live NVRAM through SCEWIN..."):
+                return self.backend.export_current(tag)
         except BiosManagerError as exc:
-            self._set_busy(False)
             self._log("NVRAM_EXPORT_FAILED", f"tag={tag}; error={exc}")
             QMessageBox.critical(self, "NVRAM export failed", str(exc))
             return None
-        finally:
-            if QApplication.overrideCursor() is not None:
-                self._set_busy(False)
 
     def export_live_nvram(self):
         """Read the live NVRAM on demand. Nothing touches firmware until this runs."""
@@ -1141,7 +1161,7 @@ class MainWindow(QMainWindow):
         live = self._run_live_export("current")
         if live is None:
             return
-        self._replace_live_export(live, "Export NVRAM")
+        self._show_nvram(live.profile, live.document, "Export NVRAM")
         QMessageBox.information(
             self,
             "NVRAM exported",
@@ -1166,16 +1186,12 @@ class MainWindow(QMainWindow):
             f"Starting preflight for {len(self.changes)} queued change(s).",
         )
         try:
-            self._set_busy(True, "Refreshing live NVRAM before import...")
-            plan = self.backend.prepare_apply(self.profile, self.changes.values())
+            with self._busy("Refreshing live NVRAM before import..."):
+                plan = self.backend.prepare_apply(self.profile, self.changes.values())
         except BiosManagerError as exc:
-            self._set_busy(False)
             self._log("APPLY_PREFLIGHT_FAILED", str(exc))
-            QMessageBox.critical(self, "Apply preflight failed", str(exc))
+            QMessageBox.critical(self, "Import preflight failed", str(exc))
             return
-        finally:
-            if QApplication.overrideCursor() is not None:
-                self._set_busy(False)
 
         lines = [f"Import {len(plan.changes)} queued NVRAM change(s)?", ""]
         for change in plan.changes[:12]:
@@ -1208,22 +1224,18 @@ class MainWindow(QMainWindow):
             )
 
         try:
-            self._set_busy(True, "Importing queued NVRAM settings through SCEWIN...")
-            result: ApplyResult = self.backend.execute_apply(plan)
+            with self._busy("Importing queued NVRAM settings through SCEWIN..."):
+                result: ApplyResult = self.backend.execute_apply(plan)
         except BiosManagerError as exc:
-            self._set_busy(False)
             self._log("APPLY_FAILED", str(exc))
             QMessageBox.critical(self, "NVRAM import not verified", str(exc))
             return
-        finally:
-            if QApplication.overrideCursor() is not None:
-                self._set_busy(False)
 
         self._log(
             "APPLY_SUCCESS",
             f"Imported and verified {result.verified_count} change(s); backup={result.backup_dir}",
         )
-        self._replace_live_export(result.verified_export, "Live refresh after apply")
+        self._show_nvram(result.verified_export.profile, result.verified_export.document, "Live refresh after apply")
         QMessageBox.information(
             self,
             "NVRAM changes applied",
@@ -1541,18 +1553,7 @@ class MainWindow(QMainWindow):
             QMessageBox.critical(self, "Profile mismatch", str(exc))
             return
 
-        self.profile = new_profile
-        self.document = new_document
-        self.changes.clear()
-        self.settings_model.beginResetModel()
-        self.settings_model.settings = self.profile.settings
-        self.settings_model.endResetModel()
-        self.change_model.refresh()
-        self.filter_model.invalidateFilter()
-        self._update_profile_line()
-        self._update_status()
-        self._update_loaded_actions()
-        self._log_nvram_open("Manual open")
+        self._show_nvram(new_profile, new_document, "Manual open")
         QMessageBox.information(
             self,
             "NVRAM loaded",

@@ -1,0 +1,37 @@
+name: tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    # Windows because the project is: it drives a Windows-only AMI utility and
+    # two kernel drivers, and the live path needs administrator rights. There
+    # is nothing here that would run on another OS.
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Install dependencies
+        run: py -m pip install --disable-pip-version-check -r requirements.txt
+
+      - name: Run the tests
+        # No firmware on a runner and no administrator rights, which is fine:
+        # the suite reads a committed synthetic export from tests/fixtures
+        # instead of a board, so what runs here is the parsing, the record
+        # rewriting, the comparison and the window construction -- the parts a
+        # change can break without a bench to notice. Nothing here executes
+        # SCEWIN. The Qt tests build widgets offscreen; they set the platform
+        # themselves.
+        run: py -m unittest discover -s tests -v
