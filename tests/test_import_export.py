@@ -9,10 +9,14 @@ system interpreter rather than the .venv.
 from __future__ import annotations
 
 import json
+import os
 import tempfile
 import unittest
 from pathlib import Path
 from types import SimpleNamespace
+
+# Widgets are built here, so ask Qt for a platform that needs no display.
+os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
 from bios_manager.compare_tools import load_snapshot
 from bios_manager.core import ParsedProfile, ScewinDocument
@@ -167,12 +171,77 @@ class StartupTests(unittest.TestCase):
         self.assertNotIn("export_current", source)
         self.assertIn("export_live_nvram", inspect.getsource(gui.MainWindow._settings_tab))
 
-    def test_import_and_export_are_wired_to_the_backend_round_trip(self):
+    def test_export_reads_the_live_nvram_and_import_writes_the_queue(self):
         import inspect
 
         self.assertIn("export_current", inspect.getsource(MainWindow._run_live_export))
-        # Import goes through apply_changes, which keeps the backup and verify pass.
-        self.assertIn("self.apply_changes()", inspect.getsource(MainWindow.import_nvram))
+        # Import is the apply path, so the backup and verification still surround it.
+        self.assertIn("execute_apply", inspect.getsource(MainWindow.apply_changes))
+        self.assertFalse(hasattr(MainWindow, "import_nvram"))
+
+
+@unittest.skipUnless(GUI_AVAILABLE, "PySide6 is not installed")
+class ButtonTests(unittest.TestCase):
+    """The NVRAM tab presents the round trip as Export and Import."""
+
+    @classmethod
+    def setUpClass(cls):
+        from PySide6.QtWidgets import QApplication
+
+        cls.app = QApplication.instance() or QApplication([])
+
+    def setUp(self):
+        # The window builds an ActivityLogger and an NvramCatalog rooted at
+        # LOCALAPPDATA. Point it at a temporary directory so running the tests
+        # never touches the real NVRAM catalog or its archive.
+        self._temp = tempfile.TemporaryDirectory()
+        self._saved = os.environ.get("LOCALAPPDATA")
+        os.environ["LOCALAPPDATA"] = self._temp.name
+
+        from bios_manager.scewin_backend import ScewinBackend
+
+        self.window = MainWindow(None, None, backend=ScewinBackend(Path.cwd()))
+
+    def tearDown(self):
+        self.window.close()
+        if self._saved is None:
+            os.environ.pop("LOCALAPPDATA", None)
+        else:
+            os.environ["LOCALAPPDATA"] = self._saved
+        self._temp.cleanup()
+
+    def buttons(self) -> dict[str, bool]:
+        from PySide6.QtWidgets import QPushButton
+
+        return {b.text(): b.isEnabled() for b in self.window.findChildren(QPushButton)}
+
+    def test_the_nvram_tab_row_is_export_then_import(self):
+        from PySide6.QtWidgets import QPushButton
+
+        row = [b.text() for b in self.window.settings_table.parent().findChildren(QPushButton)]
+        self.assertEqual(row, ["Export", "Queue selected change", "Load NVRAM...", "Import"])
+
+    def test_only_export_works_before_an_nvram_is_loaded(self):
+        state = self.buttons()
+        self.assertTrue(state["Export"])
+        for label in ("Queue selected change", "Load NVRAM...", "Import"):
+            self.assertFalse(state[label], label)
+
+    def test_the_old_labels_are_gone(self):
+        state = self.buttons()
+        for label in ("Apply", "Export NVRAM", "Import NVRAM..."):
+            self.assertNotIn(label, state)
+
+    def test_offline_mode_offers_neither_export_nor_import(self):
+        offline = MainWindow(None, None, backend=None)
+        try:
+            from PySide6.QtWidgets import QPushButton
+
+            labels = {b.text() for b in offline.findChildren(QPushButton)}
+            self.assertNotIn("Export", labels)
+            self.assertNotIn("Import", labels)
+        finally:
+            offline.close()
 
 
 if __name__ == "__main__":

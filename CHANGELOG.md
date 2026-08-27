@@ -2,31 +2,23 @@
 
 ## Unreleased
 
-- The whole test suite now runs on a fresh clone. `test_backend.py` and `test_core.py` loaded a
-  board-specific dump from the untracked `data/` folder, so 11 of the tests could not run for
-  anyone who cloned the repository. They now read a small synthetic export committed at
-  `tests/fixtures/nvram.txt`, and derive its parsed profile during the run instead of keeping a
-  second copy in git. 42 tests, all passing.
-- The application icon is now the Roch Studio logo shared with Roch Viewer. Removed
-  `tools/make_icon.py`, which drew the previous placeholder and would have silently reverted the
-  logo if anyone ran it.
-- Added `.gitattributes`. Line-ending normalisation is now a property of the repository rather
-  than of each clone's `core.autocrlf`, the bundled SCEWIN binaries are marked explicitly rather
-  than left to detection, and the SCEWIN test fixtures are stored byte for byte.
+### Reading and writing the NVRAM
 
+- The app no longer reads the firmware when it opens. It starts with nothing loaded, and the
+  NVRAM tab offers the SCEWIN round trip as two buttons: **Export** reads the live NVRAM on
+  demand, and **Import** writes the queue you have reviewed. These are the halves SCEWIN itself
+  ships as `Export.bat` and `Import.bat`. Import is the former Apply button, with the same
+  preflight, backup, and verification around the write.
+- **Load NVRAM...** queues the differences from a saved export, for example after a Clear CMOS,
+  and Import writes them.
+- Editing, loading, exporting, and importing stay disabled until an NVRAM is loaded.
 - The generated import file is now byte-for-byte identical to the export it came from except
   inside the edited records. The document normalised line endings on the way in and re-expanded
   every newline to CRLF on the way out, so a real AMISCE export — which writes a doubled CR on
   two of its header lines — came back two bytes larger with two extra blank lines, and an
   LF-only file was silently rewritten to CRLF.
 
-- The app no longer reads the firmware when it opens. It starts with nothing loaded and an
-  **Export NVRAM** button reads the live settings on demand, matching SCEWIN's `Export.bat`.
-- Added **Import NVRAM...** next to it, the other half of the round trip. It writes a saved
-  `nvram.txt` back, matching the file against the live NVRAM first so the change list can be
-  confirmed, and keeping the backup, preflight, and verification. It reads the live NVRAM
-  itself when nothing is loaded, so it works from a cold start like `Import.bat`.
-- Editing, loading, exporting, and applying stay disabled until an NVRAM is loaded.
+### Fixes
 
 - Fixed an import file that could carry **two selected options** for one setting. The
   writer stopped scanning an Options block at the first unindented row and left that
@@ -34,7 +26,7 @@
 - Fixed a queued option change being **silently discarded** when two option codes share
   the same label. The editor compared displayed text; it now compares raw values.
 - Values that a SCEWIN export's Latin-1 encoding cannot store are refused when queued,
-  instead of raising an unhandled error part-way through Apply.
+  instead of raising an unhandled error part-way through the write.
 - Missing, unreadable, or malformed profiles and exports now report a normal error
   dialog. They previously escaped every handler and, because the launchers use
   `pythonw.exe`, closed the app with no window and no message.
@@ -42,7 +34,20 @@
   `data/` is absent, which is the normal state of a fresh clone.
 - Compare no longer reports a spurious change for records that carry no token, offset,
   or width; two identical files now compare as unchanged.
-- Added `tests/test_regressions.py`, 15 tests that need no sample export.
+
+### Project
+
+- The whole test suite now runs on a fresh clone. `test_backend.py` and `test_core.py` loaded a
+  board-specific dump from the untracked `data/` folder, so 11 of the tests could not run for
+  anyone who cloned the repository. They now read a small synthetic export committed at
+  `tests/fixtures/nvram.txt`, and derive its parsed profile during the run instead of keeping a
+  second copy in git. 46 tests, all passing.
+- The application icon is now the Roch Studio logo shared with Roch Viewer. Removed
+  `tools/make_icon.py`, which drew the previous placeholder and would have silently reverted the
+  logo if anyone ran it.
+- Added `.gitattributes`. Line-ending normalisation is now a property of the repository rather
+  than of each clone's `core.autocrlf`, the bundled SCEWIN binaries are marked explicitly rather
+  than left to detection, and the SCEWIN test fixtures are stored byte for byte.
 
 ## v0.2.0
 
