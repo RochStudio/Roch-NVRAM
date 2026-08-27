@@ -2,6 +2,49 @@
 # PyInstaller spec for Roch NVRAM.
 # Build with: py -m PyInstaller --clean -y RochNVRAM.spec
 
+import os
+import sys
+
+# bios_manager/version.py is the only place the name and version are written.
+# The Windows version resource is generated from it here rather than kept as a
+# second copy in the repository, so a release cannot ship an executable whose
+# properties disagree with the program inside it.
+sys.path.insert(0, SPECPATH)
+from bios_manager.version import APP_NAME, VERSION_TUPLE, __version__
+
+_numbers = ", ".join(str(part) for part in VERSION_TUPLE)
+_dotted = ".".join(str(part) for part in VERSION_TUPLE)
+_version_resource = os.path.join(workpath, "file_version_info.txt")
+os.makedirs(workpath, exist_ok=True)
+with open(_version_resource, "w", encoding="utf-8") as _stream:
+    _stream.write("""VSVersionInfo(
+  ffi=FixedFileInfo(
+    filevers=({numbers}),
+    prodvers=({numbers}),
+    mask=0x3f,
+    flags=0x0,
+    OS=0x40004,
+    fileType=0x1,
+    subtype=0x0,
+    date=(0, 0),
+  ),
+  kids=[
+    StringFileInfo([
+      StringTable('040904B0', [
+        StringStruct('CompanyName', 'Roch Studio'),
+        StringStruct('FileDescription', '{name}'),
+        StringStruct('FileVersion', '{dotted}'),
+        StringStruct('InternalName', 'RochNVRAM'),
+        StringStruct('OriginalFilename', 'RochNVRAM.exe'),
+        StringStruct('ProductName', '{name}'),
+        StringStruct('ProductVersion', '{dotted}'),
+      ]),
+    ]),
+    VarFileInfo([VarStruct('Translation', [1033, 1200])]),
+  ],
+)
+""".format(numbers=_numbers, dotted=_dotted, name=APP_NAME))
+
 # Files the app opens at runtime.
 #
 # The icon goes inside the bundle, because gui.asset_path() looks in
@@ -92,5 +135,5 @@ exe = EXE(
     # SCEWIN needs administrator rights the moment Export or Import runs, and a
     # running process cannot elevate itself, so the manifest asks up front.
     uac_admin=True,
-    version='file_version_info.txt',
+    version=_version_resource,
 )

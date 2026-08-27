@@ -146,10 +146,10 @@ Live mode and the tests are unaffected; the tests use their own committed fixtur
 run_tests.bat
 ```
 
-All 48 tests run on a fresh clone. They cover parsing, record order, option and value
+All 56 tests run on a fresh clone. They cover parsing, record order, option and value
 edits, byte-for-byte rewriting, stale-value rejection, profile matching, verification,
-comparison results, CSV export, the catalog and its archiving, and the window's own
-button states.
+comparison results, CSV export, the catalog and its archiving, the window's own button
+states, and that the version is written in exactly one place.
 
 The export they read is committed at `tests/fixtures/nvram.txt`: a small synthetic SCEWIN
 file, not a board dump, keeping the record shapes real ones have. Its parsed profile is

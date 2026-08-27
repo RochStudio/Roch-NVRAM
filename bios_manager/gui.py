@@ -70,9 +70,7 @@ from .core import (
     write_transaction,
 )
 from .scewin_backend import ApplyResult, LiveExport, ScewinBackend
-
-
-APP_NAME = "Roch NVRAM"
+from .version import APP_NAME
 
 
 def asset_path(name: str) -> Path:
