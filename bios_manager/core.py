@@ -115,9 +115,14 @@ def sha256_file(path: str | Path) -> str:
     return digest.hexdigest()
 
 
-def read_latin1_normalized(path: str | Path) -> str:
-    raw = Path(path).read_bytes()
-    return raw.decode("latin-1").replace("\r\n", "\n").replace("\r", "\n")
+def read_latin1(path: str | Path) -> str:
+    r"""Decode a SCEWIN export verbatim, line endings and all.
+
+    Nothing is normalised. An AMISCE export is not uniformly CRLF - real ones
+    carry stray "\r\r\n" sequences in the header - so rewriting line endings on the
+    way in and out would change bytes outside the records being edited.
+    """
+    return Path(path).read_bytes().decode("latin-1")
 
 
 class ScewinDocument:
@@ -126,7 +131,7 @@ class ScewinDocument:
     def __init__(self, path: str | Path):
         self.path = Path(path)
         try:
-            self.text = read_latin1_normalized(self.path)
+            self.text = read_latin1(self.path)
             self.source_sha256 = sha256_file(self.path)
         except OSError as exc:
             raise ValidationError(f"Could not read the SCEWIN export: {exc}") from exc
@@ -355,9 +360,11 @@ class ScewinDocument:
         if output.resolve() == self.path.resolve():
             raise ValidationError("The original SCEWIN export cannot be overwritten.")
         rendered = self.render(changes)
-        # AMISCE exports use a legacy encoding; CRLF is safest for Windows tools.
+        # AMISCE exports use a legacy encoding. Line endings are whatever the source
+        # had: only the edited records differ from the file this document was read
+        # from, byte for byte.
         try:
-            encoded = rendered.replace("\n", "\r\n").encode("latin-1")
+            encoded = rendered.encode("latin-1")
         except UnicodeEncodeError as exc:
             raise ValidationError(
                 "The modified export contains a character that cannot be written in "
