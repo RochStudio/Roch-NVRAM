@@ -6,10 +6,10 @@ __pycache__/
 *$py.class
 # Old / generated output
 exports/
-# PyInstaller build output
+# PyInstaller build output. RochNVRAM.spec is tracked: it is the build, not
+# output of it.
 build/
 dist/
-*.spec
 # OS / editor cruft
 Thumbs.db
 .DS_Store

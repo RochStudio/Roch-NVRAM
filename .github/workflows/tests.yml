@@ -21,7 +21,7 @@ jobs:
 
       - uses: actions/setup-python@v6
         with:
-          python-version: '3.13'
+          python-version: '3.14'
 
       - name: Install dependencies
         run: py -m pip install --disable-pip-version-check -r requirements.txt
@@ -35,3 +35,19 @@ jobs:
         # SCEWIN. The Qt tests build widgets offscreen; they set the platform
         # themselves.
         run: py -m unittest discover -s tests -v
+
+      - name: Check the build still packages
+        # A missing import does not fail a test; it fails the first time someone
+        # runs the EXE. Building here catches that.
+        run: |
+          py -m pip install --disable-pip-version-check pyinstaller
+          py -m PyInstaller --clean -y RochNVRAM.spec
+
+      - uses: actions/upload-artifact@v5
+        with:
+          # Unsigned, and without scewin/ -- the AMI binaries live beside the
+          # executable rather than inside it, so this artifact is a build check
+          # rather than something to hand to anyone.
+          name: RochNVRAM-unsigned-no-scewin
+          path: dist/RochNVRAM.exe
+          if-no-files-found: error

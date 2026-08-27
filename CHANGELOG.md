@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.0.0
+## v1.0.0
 
 First public release. Licensed GPL-3.0-or-later; third-party components, including the
 bundled AMI binaries that licence does not cover, are listed in `THIRD_PARTY_NOTICES.txt`.
@@ -41,6 +41,12 @@ bundled AMI binaries that licence does not cover, are listed in `THIRD_PARTY_NOT
 
 ### Project
 
+- Added `RochNVRAM.spec` and `file_version_info.txt`, so the packaged build is reproducible
+  from the repository: a single `RochNVRAM.exe` carrying Python, Qt and the icon, requesting
+  administrator rights through its manifest. `scewin/` stays outside the executable so the
+  AMI binaries can be replaced without rebuilding. CI builds it on every run.
+- CI runs on Python 3.14, the newest PySide6 accepts (`>=3.10,<3.15`), and uses the
+  Node 24 actions.
 - Licensed GPL-3.0-or-later, matching Roch Viewer. Added `LICENSE`, a source header to every
   file, `THIRD_PARTY_NOTICES.txt`, and a GitHub Actions workflow that runs the suite on
   Windows.

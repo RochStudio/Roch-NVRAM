@@ -16,10 +16,14 @@ Bundled AMISCE: **5.05.01.0002**. See [THIRD_PARTY_NOTICES.txt](THIRD_PARTY_NOTI
 
 ## Run
 
-**From a packaged build** (nothing to install — Python and Qt come with it):
+**From a packaged build** (nothing to install — Python and Qt are inside the executable):
 
-1. Extract the whole `Roch NVRAM` folder.
-2. `run.bat`, and approve the Windows administrator prompt.
+1. Extract the folder: `RochNVRAM.exe` with `scewin/` beside it.
+2. Run `RochNVRAM.exe`, and approve the Windows administrator prompt.
+
+The executable requests those rights through its own manifest, so that layout has no
+`run.bat`. `scewin/` sits next to the executable rather than inside it, which is what
+lets the AMI binaries be replaced without a rebuild.
 
 **From source** (needs Python 3.10 or newer):
 
@@ -158,6 +162,20 @@ interpreter, so it reports them as skipped; run the suite from the venv to inclu
 ```bash
 .venv\Scripts\python.exe -m unittest discover -s tests
 ```
+
+## Building
+
+```bash
+py -m pip install pyinstaller
+py -m PyInstaller --clean -y RochNVRAM.spec
+```
+
+That produces `dist\RochNVRAM.exe`, a single file with Python, Qt and the icon inside
+it. Copy `scewin/` beside the executable to run it.
+
+Releases are built on Python 3.14, the newest PySide6 accepts: it ships a single abi3
+wheel and requires `>=3.10,<3.15`, so 3.10 is the floor and 3.15 will not install until
+PySide6 says otherwise.
 
 ## Credits
 
