@@ -124,7 +124,9 @@ Before importing, the app performs another live export and refuses to continue w
 
 The app then creates a timestamped backup, generates an import file where only the queued
 records are modified, runs `SCEWIN_64.exe /I /S nvram_apply.txt`, exports NVRAM again, and
-verifies every requested value. Backups and transaction files are stored under:
+verifies every requested value. That import file is byte-for-byte the live export outside the
+queued records, line endings included, so the doubled CRs AMISCE writes into its own header
+survive untouched. Backups and transaction files are stored under:
 
 ```text
 %LOCALAPPDATA%\NVRAM\backups
@@ -150,7 +152,7 @@ stale-value rejection, profile matching, verification, comparison results (inclu
 value-only matching), CSV export, the NVRAM catalog and its archiving, and protection against
 overwriting the source export.
 
-Of the 40 tests, 22 are self-contained and run anywhere. The 7 in `test_import_export.py`
+Of the 42 tests, 24 are self-contained and run anywhere. The 7 in `test_import_export.py`
 need PySide6 and skip without it, so run them from the venv (`.venv\Scripts\python.exe -m
 unittest discover -s tests`) rather than the system interpreter. The 11 in `test_backend.py`
 and `test_core.py` load the board-specific sample export from `data/`, which is not tracked in

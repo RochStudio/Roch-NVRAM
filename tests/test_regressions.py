@@ -212,6 +212,88 @@ class LoadFailureTests(unittest.TestCase):
                 ScewinDocument(Path(temp) / "absent.txt")
 
 
+class WriterFidelityTests(unittest.TestCase):
+    r"""The written file must differ from the source only inside edited records.
+
+    The document used to normalise line endings on the way in and re-expand every
+    newline to CRLF on the way out, so a real AMISCE export - which carries stray
+    "\r\r\n" sequences in its header - came back two bytes larger than it went in.
+    """
+
+    TEMPLATE = (
+        "// AMISCE Utility. Ver 5.05.01.0002{n}"
+        "HIICrc32= ABCD1234{n}{n}"
+        "Setup Question\t= Fan Mode{n}"
+        "Help String\t= Fan control{n}"
+        "Token\t= 0100{n}"
+        "Offset\t= 0010{n}"
+        "Width\t= 01{n}"
+        "BIOS Default\t= [00]Low{n}"
+        "Options\t=*[00]Low{n}"
+        "\t[01]Mid{n}"
+    )
+
+    # How a real AMISCE export is actually shaped: the doubled CRs appear on two
+    # header lines only, and the records themselves are plain CRLF. Using them
+    # inside a record would end the Options block at the blank line they create.
+    REALISTIC = TEMPLATE.replace(
+        "// AMISCE Utility. Ver 5.05.01.0002{n}HIICrc32= ABCD1234{n}",
+        "// AMISCE Utility. Ver 5.05.01.0002\r\r\nHIICrc32= ABCD1234\r\r\n",
+    )
+
+    def write(self, root: Path, text: str) -> Path:
+        nvram = root / "nvram.txt"
+        nvram.write_bytes(text.encode("latin-1"))
+        return nvram
+
+    def test_a_no_op_render_reproduces_the_source_bytes(self):
+        for label, newline in (("CRLF", "\r\n"), ("LF", "\n"), ("CR CR LF", "\r\r\n")):
+            with self.subTest(line_endings=label), tempfile.TemporaryDirectory() as temp:
+                root = Path(temp)
+                nvram = self.write(root, self.TEMPLATE.format(n=newline))
+                output = ScewinDocument(nvram).write_modified_copy(root / "out.txt", [])
+                self.assertEqual(output.read_bytes(), nvram.read_bytes())
+
+    def test_only_the_edited_record_differs(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            nvram = self.write(root, self.REALISTIC.format(n="\r\n"))
+            parsed = parse_sce_file(nvram, source="nvram", commented=False)
+            profile_path = root / "profile.json"
+            profile_path.write_text(
+                json.dumps(
+                    {
+                        "schema_version": 1,
+                        "label": "Synthetic",
+                        "metadata": parsed["metadata"],
+                        "active_settings": [setting_to_dict(i) for i in parsed["settings"]],
+                    }
+                ),
+                encoding="utf-8",
+            )
+            profile = ParsedProfile.load(profile_path)
+            document = ScewinDocument(nvram)
+            document.verify_profile(profile)
+
+            setting = profile.settings[0]
+            change = document.build_change(profile, setting["export_id"], "01")
+            output = document.write_modified_copy(root / "out.txt", [change])
+
+            before = nvram.read_bytes()
+            after = output.read_bytes()
+            span = document.records[setting["export_id"]]
+            differing = [i for i in range(min(len(before), len(after))) if before[i] != after[i]]
+
+            self.assertTrue(differing, "the change must actually be written")
+            for offset in differing:
+                self.assertTrue(
+                    span.start <= offset < span.end,
+                    f"byte {offset} changed outside the edited record {span.start}..{span.end}",
+                )
+            # The header's doubled CRs are part of what must survive untouched.
+            self.assertIn(b"\r\r\n", after)
+
+
 class IdentityTests(unittest.TestCase):
     def test_records_without_an_identity_are_not_compared(self):
         with tempfile.TemporaryDirectory() as temp:
