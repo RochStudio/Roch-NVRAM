@@ -18,13 +18,30 @@ Bundled SCEWIN: **AMISCE 5.05.01.0002**.
 1. Run `install.bat` once to create `.venv` and install PySide6.
 2. Run `run.bat` and approve the administrator prompt.
 
-On startup the app exports the current NVRAM through the bundled SCEWIN runtime. Live mode
-never uses a sample file.
+The app opens with nothing loaded and does not touch the firmware. Press **Export NVRAM**
+to read the live settings. The administrator prompt still appears at launch because SCEWIN
+needs it the moment you press Export or Import. Live mode never uses a sample file.
+
+## Export and Import
+
+These are the two halves of the SCEWIN round trip, the same split as SCEWIN's own
+`Export.bat` and `Import.bat`, and both live in the NVRAM tab:
+
+- **Export NVRAM** reads the live NVRAM through the bundled SCEWIN runtime and loads it into
+  the table. Nothing is read from the firmware until you press it.
+- **Import NVRAM...** writes a saved `nvram.txt` back. Unlike `Import.bat`, which runs SCEWIN
+  on the file as it stands, the file is first matched to the live NVRAM so the exact list of
+  settings can be confirmed, and the backup, preflight, and verification below still run. If
+  no NVRAM is loaded yet, Import reads one first so it works straight from a cold start.
+
+Editing, loading, and applying all need an NVRAM in the table, so those buttons stay
+disabled until you export one. Compare and Log work on their own files and are always
+available.
 
 ## Offline mode
 
 Run `run_offline.bat` for the dry run. It never executes SCEWIN, never writes firmware, needs
-no administrator rights, and hides the Apply button. Compare and Log remain available.
+no administrator rights, and hides the Export, Import, and Apply buttons. Compare and Log remain available.
 
 Offline mode needs a sample export in `data/` (an `nvram.txt` plus its parsed `.json`). These
 are board-specific and are not tracked in git, so a fresh clone has no `data/` folder — point
@@ -38,13 +55,16 @@ The table preserves the exact record order of `nvram.txt` and shows Setting, Hel
 Token, Offset, Width, BIOS Default, and Options/Value. Search across names, help text, tokens,
 offsets, and export IDs; filter by type or by editable/warning state.
 
+- **Export NVRAM** reads the live NVRAM (live mode only).
+- **Import NVRAM...** writes a saved export back (live mode only).
 - **Queue selected change** (or double-click a row) edits an entry.
-- **Load NVRAM...** restores settings from a saved export — see below.
+- **Load NVRAM...** queues the differences from a saved export without writing — see below.
 - **Apply** writes the queue (live mode only).
 
 ## Load NVRAM
 
-Restores settings from a previously saved `nvram.txt`, for example after a Clear CMOS. The
+Queues the differences from a previously saved `nvram.txt`, for example after a Clear CMOS,
+without writing anything — use **Import NVRAM...** to queue and write in one step. The
 saved file is never imported wholesale. Its settings are matched to the live export by
 **token + offset + width**, and every difference is queued as a normal pending change, so the
 usual preflight, backup, and verification still apply.
@@ -130,6 +150,8 @@ stale-value rejection, profile matching, verification, comparison results (inclu
 value-only matching), CSV export, the NVRAM catalog and its archiving, and protection against
 overwriting the source export.
 
-22 of the 33 tests are self-contained and run on a fresh clone. The 11 in `test_backend.py`
+Of the 40 tests, 22 are self-contained and run anywhere. The 7 in `test_import_export.py`
+need PySide6 and skip without it, so run them from the venv (`.venv\Scripts\python.exe -m
+unittest discover -s tests`) rather than the system interpreter. The 11 in `test_backend.py`
 and `test_core.py` load the board-specific sample export from `data/`, which is not tracked in
 git, and error out when it is absent.

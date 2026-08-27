@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- The app no longer reads the firmware when it opens. It starts with nothing loaded and an
+  **Export NVRAM** button reads the live settings on demand, matching SCEWIN's `Export.bat`.
+- Added **Import NVRAM...** next to it, the other half of the round trip. It writes a saved
+  `nvram.txt` back, matching the file against the live NVRAM first so the change list can be
+  confirmed, and keeping the backup, preflight, and verification. It reads the live NVRAM
+  itself when nothing is loaded, so it works from a cold start like `Import.bat`.
+- Editing, loading, exporting, and applying stay disabled until an NVRAM is loaded.
+
 - Fixed an import file that could carry **two selected options** for one setting. The
   writer stopped scanning an Options block at the first unindented row and left that
   row's `*` in place; reader and writer now share one rule for what an option row is.
