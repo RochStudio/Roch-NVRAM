@@ -624,6 +624,15 @@ class MainWindow(QMainWindow):
             )
             export_button.clicked.connect(self.export_live_nvram)
             buttons.addWidget(export_button)
+            import_button = QPushButton("Import")
+            import_button.setToolTip(
+                "Write the queued changes through SCEWIN. A backup and a "
+                "verification pass run around the import."
+            )
+            import_button.clicked.connect(self.apply_changes)
+            self.apply_buttons.append(import_button)
+            self.loaded_buttons.append(import_button)
+            buttons.addWidget(import_button)
         edit = QPushButton("Queue selected change")
         edit.clicked.connect(self.edit_selected)
         self.loaded_buttons.append(edit)
@@ -637,16 +646,6 @@ class MainWindow(QMainWindow):
         self.loaded_buttons.append(load)
         buttons.addWidget(load)
         buttons.addStretch(1)
-        if self.live_mode:
-            import_button = QPushButton("Import")
-            import_button.setToolTip(
-                "Write the queued changes through SCEWIN. A backup and a "
-                "verification pass run around the import."
-            )
-            import_button.clicked.connect(self.apply_changes)
-            self.apply_buttons.append(import_button)
-            self.loaded_buttons.append(import_button)
-            buttons.addWidget(import_button)
         layout.addLayout(buttons)
         return tab
 
