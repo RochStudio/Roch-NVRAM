@@ -1,3 +1,19 @@
+# Roch NVRAM -- an editor for AMI SCEWIN NVRAM exports.
+# Copyright (C) 2026 Roch Studio
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 from __future__ import annotations
 
 import ctypes
@@ -17,6 +33,7 @@ from .core import (
     ProfileMismatchError,
     ScewinDocument,
     ValidationError,
+    raw_value,
     sha256_file,
 )
 from .scewin_parser import parse_sce_file, setting_to_dict
@@ -64,12 +81,6 @@ def is_windows_admin() -> bool:
         return bool(ctypes.windll.shell32.IsUserAnAdmin())
     except Exception:
         return False
-
-
-def _setting_raw(setting: dict) -> str:
-    if setting.get("kind") == "options":
-        return str(setting.get("current_code_hex") or "").upper()
-    return str(setting.get("current_value") if setting.get("current_value") is not None else "")
 
 
 def write_live_profile(
@@ -129,7 +140,7 @@ def remap_changes(
         if old_setting.get("kind") != fresh_setting.get("kind"):
             conflicts.append(f"{queued.question}: setting type changed")
             continue
-        if _setting_raw(old_setting) != _setting_raw(fresh_setting):
+        if raw_value(old_setting) != raw_value(fresh_setting):
             conflicts.append(
                 f"{queued.question}: live value changed from "
                 f"{ScewinDocument.setting_display(old_setting)} to "
@@ -162,7 +173,7 @@ def verify_changes(profile: ParsedProfile, changes: Iterable[PendingChange]) -> 
         if setting is None:
             mismatches.append(f"{change.question}: missing from verification export")
             continue
-        actual = _setting_raw(setting)
+        actual = raw_value(setting)
         expected = change.new_raw.upper() if change.kind == "options" else change.new_raw
         if change.kind == "options":
             actual = actual.upper()
