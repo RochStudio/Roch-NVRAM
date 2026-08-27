@@ -7,7 +7,8 @@ __pycache__/
 # Old / generated output
 exports/
 # PyInstaller build output. RochNVRAM.spec is tracked: it is the build, not
-# output of it.
+# output of it. file_version_info.txt is generated into build/ from
+# bios_manager/version.py, so it is not kept here either.
 build/
 dist/
 # OS / editor cruft

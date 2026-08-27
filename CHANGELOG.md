@@ -1,6 +1,6 @@
 # Changelog
 
-## v1.0.0
+## 1.0.0
 
 First public release. Licensed GPL-3.0-or-later; third-party components, including the
 bundled AMI binaries that licence does not cover, are listed in `THIRD_PARTY_NOTICES.txt`.
@@ -41,12 +41,16 @@ bundled AMI binaries that licence does not cover, are listed in `THIRD_PARTY_NOT
 
 ### Project
 
-- Added `RochNVRAM.spec` and `file_version_info.txt`, so the packaged build is reproducible
+- Added `RochNVRAM.spec`, so the packaged build is reproducible
   from the repository: a single `RochNVRAM.exe` carrying Python, Qt and the icon, requesting
   administrator rights through its manifest. `scewin/` stays outside the executable so the
   AMI binaries can be replaced without rebuilding. CI builds it on every run.
 - CI runs on Python 3.14, the newest PySide6 accepts (`>=3.10,<3.15`), and uses the
   Node 24 actions.
+- The version is written in one place, `bios_manager/version.py`. The window title reads it,
+  the executable's version resource is generated from it at build time rather than kept as a
+  second copy, and `tests/test_version.py` holds the README and the changelog to it — including
+  a check that no other module declares a `__version__` of its own.
 - Licensed GPL-3.0-or-later, matching Roch Viewer. Added `LICENSE`, a source header to every
   file, `THIRD_PARTY_NOTICES.txt`, and a GitHub Actions workflow that runs the suite on
   Windows.
@@ -70,7 +74,7 @@ bundled AMI binaries that licence does not cover, are listed in `THIRD_PARTY_NOT
   than of each clone's `core.autocrlf`, the bundled SCEWIN binaries are marked explicitly rather
   than left to detection, and the SCEWIN test fixtures are stored byte for byte.
 
-## v0.2.0
+## 0.2.0
 
 - Renamed the application to **Roch NVRAM** and added an application icon.
 - Ships as a standalone build; Python and Qt are bundled and no install step is required.
@@ -89,13 +93,13 @@ bundled AMI binaries that licence does not cover, are listed in `THIRD_PARTY_NOT
   and three write-only fields. Pending Changes no longer rebuilds a list per table cell.
 - Tests expanded to 20.
 
-## v0.1.6
+## 0.1.6
 
 - Removed the live-mode information banner from the top of the normal NVRAM window.
 - Kept the dry-run warning banner in offline mode.
 - Renamed the generated live profile label from **Live SCEWIN NVRAM** to **NVRAM**.
 
-## v0.1.5
+## 0.1.5
 
 - Renamed the application window from **SCEWIN NVRAM Manager** to **NVRAM**.
 - Renamed Compare inputs and value columns to **NVRAM 1** and **NVRAM 2**.
@@ -103,7 +107,7 @@ bundled AMI binaries that licence does not cover, are listed in `THIRD_PARTY_NOT
 - Limited the persistent Log tab to NVRAM-related activity only.
 - Renamed the persistent log file to `nvram.log` under `%LOCALAPPDATA%\NVRAM\logs`.
 
-## v0.1.4
+## 0.1.4
 
 - Added a **Compare** tab for NVRAM 1 versus NVRAM 2 `nvram.txt` files.
 - Added changed-only, all-entry, and same-only comparison filters.
@@ -116,7 +120,7 @@ bundled AMI binaries that licence does not cover, are listed in `THIRD_PARTY_NOT
 - Manual matching NVRAM/profile opens now load immediately instead of requiring a restart.
 - Added comparison and logging tests; 15 tests pass.
 
-## v0.1.3
+## 0.1.3
 
 - Returned to the original v0.1.2 PySide6 interface.
 - Added **Apply** buttons to the NVRAM and Pending Changes tabs.
@@ -129,7 +133,7 @@ bundled AMI binaries that licence does not cover, are listed in `THIRD_PARTY_NOT
 - Bundled the user-supplied SCEWIN executable and two drivers.
 - Added backend tests; 11 tests pass.
 
-## v0.1.2
+## 0.1.2
 
 - Renamed the main settings view to NVRAM.
 - Preserved exact source order.

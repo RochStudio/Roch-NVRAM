@@ -14,8 +14,17 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-"""Roch NVRAM core package."""
+"""The one place the product name and version are written.
 
-from .version import APP_NAME, VERSION_TUPLE, __version__
+The name titles the window and the version is stamped into the executable's
+file properties, so a build can be identified from the binary alone without
+the directory it came from. Everywhere else -- the window, the changelog, the
+README, the version resource -- reads from here or is checked against it by
+tests/test_version.py.
+"""
 
-__all__ = ["APP_NAME", "VERSION_TUPLE", "__version__"]
+APP_NAME = "Roch NVRAM"
+__version__ = "1.0.0"
+
+# Windows file-version resources want four numbers.
+VERSION_TUPLE = tuple(int(part) for part in __version__.split(".")) + (0,)
