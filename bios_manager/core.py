@@ -7,6 +7,8 @@ from dataclasses import dataclass, asdict
 from pathlib import Path
 from typing import Any, Iterable
 
+from .scewin_parser import option_line_indexes
+
 
 HII_RE = re.compile(r"^HIICrc32=\s*([0-9A-Fa-f]+)\s*$", re.MULTILINE)
 FIELD_RE = {
@@ -14,8 +16,10 @@ FIELD_RE = {
     "offset": re.compile(r"^Offset\t=\s*([0-9A-Fa-f]+)\s*$", re.MULTILINE),
     "width": re.compile(r"^Width\t=\s*([0-9A-Fa-f]+)\s*$", re.MULTILINE),
 }
+# The prefix is \s* (not \s+) to match scewin_parser.OPTION_RE: AMISCE indents
+# continuation rows, but a row at column 0 is still a row.
 OPTION_LINE_RE = re.compile(
-    r"^(?P<prefix>(?:Options\t=|\s+))(?P<star>\*)?"
+    r"^(?P<prefix>Options\t=|\s*)(?P<star>\*)?"
     r"\[(?P<code>[0-9A-Fa-f]+)\](?P<tail>.*)$"
 )
 VALUE_LINE_RE = re.compile(r"^(?P<prefix>Value\t=\s*)<(?P<value>[^>]*)>(?P<tail>.*)$")
@@ -71,8 +75,17 @@ class ParsedProfile:
     @classmethod
     def load(cls, path: str | Path) -> "ParsedProfile":
         profile_path = Path(path)
-        with profile_path.open("r", encoding="utf-8") as stream:
-            data = json.load(stream)
+        # Callers only handle BiosManagerError, so a missing file or malformed
+        # JSON has to arrive as one rather than as OSError/ValueError.
+        try:
+            with profile_path.open("r", encoding="utf-8") as stream:
+                data = json.load(stream)
+        except OSError as exc:
+            raise ValidationError(f"Could not read the parsed profile: {exc}") from exc
+        except ValueError as exc:
+            raise ValidationError(f"The parsed profile is not valid JSON: {exc}") from exc
+        if not isinstance(data, dict):
+            raise ValidationError("The parsed profile is not a SCEWIN profile object.")
         if data.get("schema_version") != 1:
             raise ValidationError("Unsupported parsed profile schema.")
         settings = data.get("active_settings")
@@ -112,12 +125,15 @@ class ScewinDocument:
 
     def __init__(self, path: str | Path):
         self.path = Path(path)
-        self.text = read_latin1_normalized(self.path)
+        try:
+            self.text = read_latin1_normalized(self.path)
+            self.source_sha256 = sha256_file(self.path)
+        except OSError as exc:
+            raise ValidationError(f"Could not read the SCEWIN export: {exc}") from exc
         hii_match = HII_RE.search(self.text)
         if not hii_match:
             raise ValidationError("The SCEWIN file does not contain HIICrc32.")
         self.hii_crc32 = hii_match.group(1).upper()
-        self.source_sha256 = sha256_file(self.path)
         self.records = self._index_records()
 
     def _index_records(self) -> dict[str, RecordSpan]:
@@ -200,6 +216,13 @@ class ScewinDocument:
             raise ValidationError("Value cannot be empty.")
         if any(character in cleaned for character in "<>\r\n"):
             raise ValidationError("Value contains unsupported characters.")
+        try:
+            cleaned.encode("latin-1")
+        except UnicodeEncodeError as exc:
+            raise ValidationError(
+                "Value contains characters that a SCEWIN export cannot store. "
+                "Use plain Latin-1 text."
+            ) from exc
 
         # Small widths are overwhelmingly numeric SCEWIN fields. Accept decimal or 0x.
         if width is not None and width <= 8:
@@ -271,20 +294,22 @@ class ScewinDocument:
                 )
             return "\n".join(lines)
 
-        in_options = False
         target_hits = 0
         option_rows = 0
-        for index, line in enumerate(lines):
-            if line.startswith("Options\t="):
-                in_options = True
-            elif in_options and line and not line[:1].isspace():
-                in_options = False
-
-            if not in_options:
-                continue
+        # Same membership rule as the parser. Scanning fewer rows than the parser
+        # listed would leave a stale "*" behind and write a record with two
+        # selected options, which SCEWIN would import as an ambiguous question.
+        for index in option_line_indexes(lines):
+            line = lines[index]
             match = OPTION_LINE_RE.match(line)
-            if not match:
-                continue
+            if match is None:
+                # The parser records unparsed_option_line for these and
+                # is_editable refuses the setting, so this is unreachable unless
+                # the record changed underneath us. Refuse rather than write a
+                # partially normalised block.
+                raise ValidationError(
+                    f"Unrecognised option row for {change.export_id}: {line!r}."
+                )
             option_rows += 1
             code = match.group("code").upper()
             star = "*" if code == change.new_raw.upper() else ""
@@ -330,9 +355,19 @@ class ScewinDocument:
         if output.resolve() == self.path.resolve():
             raise ValidationError("The original SCEWIN export cannot be overwritten.")
         rendered = self.render(changes)
-        output.parent.mkdir(parents=True, exist_ok=True)
         # AMISCE exports use a legacy encoding; CRLF is safest for Windows tools.
-        output.write_bytes(rendered.replace("\n", "\r\n").encode("latin-1"))
+        try:
+            encoded = rendered.replace("\n", "\r\n").encode("latin-1")
+        except UnicodeEncodeError as exc:
+            raise ValidationError(
+                "The modified export contains a character that cannot be written in "
+                f"the SCEWIN Latin-1 encoding: {exc.object[exc.start:exc.end]!r}."
+            ) from exc
+        try:
+            output.parent.mkdir(parents=True, exist_ok=True)
+            output.write_bytes(encoded)
+        except OSError as exc:
+            raise BiosManagerError(f"Could not write {output}: {exc}") from exc
         return output
 
 
@@ -343,6 +378,10 @@ def write_transaction(
     changes: Iterable[PendingChange],
 ) -> Path:
     output = Path(output_path)
+    try:
+        profile_sha256 = sha256_file(profile.path)
+    except OSError as exc:
+        raise BiosManagerError(f"Could not read the profile: {exc}") from exc
     payload = {
         "schema_version": 1,
         "dry_run_only": True,
@@ -351,9 +390,12 @@ def write_transaction(
         "source_nvram": str(document.path),
         "source_sha256": document.source_sha256,
         "profile_path": str(profile.path),
-        "profile_sha256": sha256_file(profile.path),
+        "profile_sha256": profile_sha256,
         "changes": [change.to_dict() for change in changes],
     }
-    output.parent.mkdir(parents=True, exist_ok=True)
-    output.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+    try:
+        output.parent.mkdir(parents=True, exist_ok=True)
+        output.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+    except OSError as exc:
+        raise BiosManagerError(f"Could not write {output}: {exc}") from exc
     return output

@@ -40,6 +40,7 @@ from .compare_tools import (
     NvramSnapshot,
     compare_snapshots,
     export_compare_csv,
+    has_identity,
     identity_without_crc,
     load_snapshot,
     raw_value,
@@ -1134,7 +1135,10 @@ class MainWindow(QMainWindow):
             setting, self.document, self.profile, self, live_mode=self.live_mode
         )
         if dialog.exec() and dialog.change:
-            if dialog.change.old_display == dialog.change.new_display:
+            # Compare raw values, not the displayed labels: two option codes may
+            # carry the same label, and comparing labels silently discarded a
+            # real change (and any change already queued for the setting).
+            if dialog.change.new_raw == raw_value(setting):
                 removed = self.changes.pop(dialog.change.export_id, None)
                 if removed is not None:
                     self._log(
@@ -1189,7 +1193,7 @@ class MainWindow(QMainWindow):
 
         for saved in snapshot.settings:
             key = identity_without_crc(saved)
-            if not key or key == "::" or key in seen:
+            if not has_identity(key) or key in seen:
                 continue
             seen.add(key)
             current = current_by_identity.get(key)
@@ -1437,6 +1441,38 @@ def run(
         finally:
             QApplication.restoreOverrideCursor()
 
-    window = MainWindow(profile_path, nvram_path, backend=backend)
+    if not live:
+        absent = [str(path) for path in (profile_path, nvram_path) if not Path(path).is_file()]
+        if absent:
+            QMessageBox.critical(
+                None,
+                "Sample NVRAM not found",
+                "Offline mode needs a sample export, which is not shipped because it "
+                "is board-specific.\n\nMissing:\n"
+                + "\n".join(absent)
+                + "\n\nPoint the app at your own export with --profile and --nvram.",
+            )
+            return 1
+
+    # The launchers start pythonw.exe, which has no console: anything that escapes
+    # here would take the app down with no window and no message at all.
+    try:
+        window = MainWindow(profile_path, nvram_path, backend=backend)
+    except BiosManagerError as exc:
+        QMessageBox.critical(
+            None,
+            "NVRAM could not be opened",
+            f"{APP_NAME} could not open the NVRAM export. "
+            f"Nothing was written.\n\n{exc}",
+        )
+        return 1
+    except Exception as exc:
+        QMessageBox.critical(
+            None,
+            "Unexpected error",
+            f"{APP_NAME} could not start.\n\n{type(exc).__name__}: {exc}",
+        )
+        return 1
+
     window.show()
     return app.exec()

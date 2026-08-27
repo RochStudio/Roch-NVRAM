@@ -75,11 +75,25 @@ def load_snapshot(path: str | Path) -> NvramSnapshot:
     )
 
 
+EMPTY_IDENTITY = "::"
+
+
 def identity_without_crc(setting: dict[str, Any]) -> str:
     return ":".join(
         str(setting.get(key) or "").upper()
         for key in ("token_hex", "offset_hex", "width_hex")
     )
+
+
+def has_identity(key: str) -> bool:
+    """Whether a token/offset/width identity can be matched against another file.
+
+    A record carrying none of the three fields collapses to EMPTY_IDENTITY, which
+    cannot identify anything. Every caller has to skip those the same way: when
+    the indexes dropped them but the row loops did not, two identical files
+    reported a spurious "Only in NVRAM 1" change.
+    """
+    return bool(key) and key != EMPTY_IDENTITY
 
 
 def raw_value(setting: dict[str, Any]) -> str:
@@ -113,7 +127,7 @@ def _unique_index(settings: list[dict[str, Any]]) -> tuple[dict[str, dict[str, A
     ambiguous: set[str] = set()
     for setting in settings:
         key = identity_without_crc(setting)
-        if not key or key == "::":
+        if not has_identity(key):
             continue
         if key in index:
             ambiguous.add(key)
@@ -184,14 +198,14 @@ def compare_snapshots(stock: NvramSnapshot, overclocked: NvramSnapshot) -> Compa
     # are appended in their original NVRAM 2 file order.
     for stock_setting in stock.settings:
         key = identity_without_crc(stock_setting)
-        if not key or key in seen:
+        if not has_identity(key) or key in seen:
             continue
         seen.add(key)
         rows.append(make_row(key, stock_setting, oc_index.get(key)))
 
     for oc_setting in overclocked.settings:
         key = identity_without_crc(oc_setting)
-        if not key or key in seen:
+        if not has_identity(key) or key in seen:
             continue
         seen.add(key)
         rows.append(make_row(key, stock_index.get(key), oc_setting))
