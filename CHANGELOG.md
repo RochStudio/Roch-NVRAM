@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- The generated import file is now byte-for-byte identical to the export it came from except
+  inside the edited records. The document normalised line endings on the way in and re-expanded
+  every newline to CRLF on the way out, so a real AMISCE export — which writes a doubled CR on
+  two of its header lines — came back two bytes larger with two extra blank lines, and an
+  LF-only file was silently rewritten to CRLF.
+
 - The app no longer reads the firmware when it opens. It starts with nothing loaded and an
   **Export NVRAM** button reads the live settings on demand, matching SCEWIN's `Export.bat`.
 - Added **Import NVRAM...** next to it, the other half of the round trip. It writes a saved
@@ -24,7 +30,7 @@
   `data/` is absent, which is the normal state of a fresh clone.
 - Compare no longer reports a spurious change for records that carry no token, offset,
   or width; two identical files now compare as unchanged.
-- Added `tests/test_regressions.py`, 13 tests that need no sample export.
+- Added `tests/test_regressions.py`, 15 tests that need no sample export.
 
 ## v0.2.0
 
