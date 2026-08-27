@@ -45,16 +45,6 @@ and verifies every value afterwards -- Import.bat writes the file as it stands.
 
 No file from SCEHUB is included here, and it is not needed to run this.
 
-Roch Viewer  (companion project)
---------------------------------
-  https://github.com/RochStudio/Roch-Viewer  -- Roch Studio
-
-The application icon is shared with Roch Viewer, and the repository conventions
-here -- the licence, the source headers, the .gitattributes -- follow the ones
-established there. Roch Viewer reads memory-controller and timing state and
-changes nothing; this program writes firmware settings. They are separate
-programs and neither requires the other.
-
 PySide6 / Qt  (dependency, not bundled in this repository)
 ----------------------------------------------------------
   Copyright (c) The Qt Company Ltd.
