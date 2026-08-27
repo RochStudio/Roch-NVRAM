@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+- The whole test suite now runs on a fresh clone. `test_backend.py` and `test_core.py` loaded a
+  board-specific dump from the untracked `data/` folder, so 11 of the tests could not run for
+  anyone who cloned the repository. They now read a small synthetic export committed at
+  `tests/fixtures/nvram.txt`, and derive its parsed profile during the run instead of keeping a
+  second copy in git. 42 tests, all passing.
+- The application icon is now the Roch Studio logo shared with Roch Viewer. Removed
+  `tools/make_icon.py`, which drew the previous placeholder and would have silently reverted the
+  logo if anyone ran it.
+- Added `.gitattributes`. Line-ending normalisation is now a property of the repository rather
+  than of each clone's `core.autocrlf`, the bundled SCEWIN binaries are marked explicitly rather
+  than left to detection, and the SCEWIN test fixtures are stored byte for byte.
+
 - The generated import file is now byte-for-byte identical to the export it came from except
   inside the edited records. The document normalised line endings on the way in and re-expanded
   every newline to CRLF on the way out, so a real AMISCE export — which writes a doubled CR on

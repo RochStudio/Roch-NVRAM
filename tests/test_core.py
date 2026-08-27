@@ -6,20 +6,33 @@ import unittest
 from pathlib import Path
 
 from bios_manager.core import ParsedProfile, ScewinDocument, ValidationError, write_transaction
+from bios_manager.scewin_backend import write_live_profile
 
 
-ROOT = Path(__file__).resolve().parents[1]
-PROFILE = ROOT / "data" / "z890_tachyon_nvram_parsed.json"
-NVRAM = ROOT / "data" / "z890_tachyon_nvram.txt"
+# Committed alongside the tests so a fresh clone can run them. It is a small
+# synthetic export, not a board dump, but it keeps the record shapes the real
+# ones have: a blocked setting, an N/A question, options, and numeric values.
+FIXTURES = Path(__file__).resolve().parent / "fixtures"
+NVRAM = FIXTURES / "nvram.txt"
+DUPES = FIXTURES / "Dupes.txt"
 
 
 class CoreTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.profile = ParsedProfile.load(PROFILE)
+        # The profile is derived from the committed export instead of being
+        # committed next to it, so the two cannot drift apart.
+        cls._temp = tempfile.TemporaryDirectory()
+        cls.profile_path = Path(cls._temp.name) / "profile.json"
+        write_live_profile(NVRAM, DUPES, cls.profile_path)
+        cls.profile = ParsedProfile.load(cls.profile_path)
         cls.document = ScewinDocument(NVRAM)
         cls.document.verify_profile(cls.profile)
         cls.by_id = cls.profile.by_id()
+
+    @classmethod
+    def tearDownClass(cls):
+        cls._temp.cleanup()
 
     def find(self, question: str):
         matches = [item for item in self.profile.settings if item.get("question") == question]
@@ -28,7 +41,7 @@ class CoreTests(unittest.TestCase):
 
     def test_profile_matches_source(self):
         self.assertEqual(self.profile.hii_crc32, "B176E215")
-        self.assertEqual(len(self.document.records), 8299)
+        self.assertEqual(len(self.document.records), 8)
 
 
     def test_profile_preserves_nvram_order(self):

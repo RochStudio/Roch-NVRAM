@@ -1,0 +1,14 @@
+// Script File Name : Dupes.txt
+// Created on 07/10/26 at 12:00:00
+// AMISCE Utility. Ver 5.05.01.0002
+// HIICrc32= B176E215
+//
+// Setup Question	= Memory Try It !
+// Help String	= Duplicate of an active setting.
+// Token	= 0408
+// Offset	= 0018
+// Width	= 01
+// BIOS Default	= [00]Disabled
+// Options	=*[00]Disabled
+// 	[01]DDR5-6000 CL30
+//

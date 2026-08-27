@@ -1,0 +1,80 @@
+// Script File Name : nvram.txt
+// Created on 07/10/26 at 12:00:00
+// AMISCE Utility. Ver 5.05.01.0002
+// Copyright (c) 2021 AMI. All rights reserved.
+HIICrc32= B176E215
+
+Setup Question	= Multi-Theme
+Help String	= Selects the setup theme.
+Token	= 0400
+Offset	= 0010
+Width	= 01
+BIOS Default	= [00]Theme 1
+Options	=[00]Theme 1
+	[01]Theme 2
+
+Setup Question	= CPU Temp Loading Time
+Help String	= Seconds to wait before reading CPU temperature.
+Token	= 0401
+Offset	= 0011
+Width	= 01
+BIOS Default	= <5>
+Value	=<5>
+
+Setup Question	= N/A
+Help String	= Reserved.
+Token	= 0402
+Offset	= 0012
+Width	= 01
+BIOS Default	= [00]Disabled
+Options	=*[00]Disabled
+	[01]Enabled
+
+Setup Question	= BCLK Output Source
+Help String	= Selects the base clock source.
+Token	= 0403
+Offset	= 0013
+Width	= 01
+BIOS Default	= [00]Auto
+Options	=*[00]Auto
+	[01]External Clock Generator
+	[02]Internal Clock Generator
+
+Setup Question	= CPU Base Clock 100.00MHz
+Help String	= Base clock in units of 0.01 MHz.
+Token	= 0404
+Offset	= 0014
+Width	= 02
+BIOS Default	= <10000>
+Value	=<10000>
+
+Setup Question	= Extreme Memory Profile(X.M.P.)
+Help String	= Selects the memory profile to apply.
+Token	= 0405
+Offset	= 0015
+Width	= 01
+BIOS Default	= [00]Disabled
+Options	=*[00]Disabled
+	[01]XMP Profile 1
+	[02]XMP Profile 2
+	[03]XMP Profile 3
+	[04]XMP Profile 4
+	[05]User Profile
+
+Setup Question	= Performance CPU Clock Ratio 37
+Help String	= Core ratio applied in the performance profile.
+Token	= 0406
+Offset	= 0016
+Width	= 01
+BIOS Default	= <37>
+Value	=<37>
+
+Setup Question	= Memory Try It !
+Help String	= Applies a preset memory timing set.
+Token	= 0407
+Offset	= 0017
+Width	= 01
+BIOS Default	= [00]Disabled
+Options	=*[00]Disabled
+	[01]DDR5-6000 CL30
+
