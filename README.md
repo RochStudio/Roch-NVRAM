@@ -46,8 +46,8 @@ no administrator rights, and hides the Export, Import, and Apply buttons. Compar
 Offline mode needs a sample export in `data/` (an `nvram.txt` plus its parsed `.json`). These
 are board-specific and are not tracked in git, so a fresh clone has no `data/` folder — point
 the app at your own export with `--profile` and `--nvram`, or generate a pair with
-`python -m bios_manager.scewin_parser <nvram.txt> --output data/profile.json`. Live mode is
-unaffected.
+`python -m bios_manager.scewin_parser <nvram.txt> --output data/profile.json`. Live mode and
+the test suite are unaffected; the tests use their own committed fixture.
 
 ## NVRAM tab
 
@@ -152,8 +152,11 @@ stale-value rejection, profile matching, verification, comparison results (inclu
 value-only matching), CSV export, the NVRAM catalog and its archiving, and protection against
 overwriting the source export.
 
-Of the 42 tests, 24 are self-contained and run anywhere. The 7 in `test_import_export.py`
-need PySide6 and skip without it, so run them from the venv (`.venv\Scripts\python.exe -m
-unittest discover -s tests`) rather than the system interpreter. The 11 in `test_backend.py`
-and `test_core.py` load the board-specific sample export from `data/`, which is not tracked in
-git, and error out when it is absent.
+All 42 tests run on a fresh clone. The export they read is committed at
+`tests/fixtures/nvram.txt`: a small synthetic SCEWIN file, not a board dump, that keeps the
+record shapes the real ones have. Its parsed profile is generated during the test run rather
+than committed beside it, so the two cannot drift apart.
+
+The 7 in `test_import_export.py` need PySide6 and skip cleanly without it, so run the suite
+from the venv (`.venv\Scripts\python.exe -m unittest discover -s tests`) to include them.
+`run_tests.bat` uses the system interpreter and reports them as skipped.

@@ -1,0 +1,22 @@
+# Line endings are the repository's business, not each clone's.
+#
+# Everything stored here uses LF, because the machines that have committed to it
+# had core.autocrlf=true. That is a per-clone setting: a contributor without it
+# would commit CRLF and every line would show as changed. This makes the
+# normalisation a property of the repository instead, so the stored form is LF
+# regardless of who clones it, and Windows working copies still get CRLF.
+* text=auto
+
+# Marked rather than left to detection. text=auto classifies by looking for NUL
+# bytes and would get these right, but SCEWIN_64.exe and its two drivers are the
+# only path this project has to the firmware: a misclassification would rewrite
+# bytes inside them, and the cost of being explicit is three lines.
+*.ico binary
+*.exe binary
+*.sys binary
+
+# Not binaries, but not text either. These are SCEWIN exports whose exact bytes
+# are the point: the writer is required to reproduce them byte for byte outside
+# the records it edits, so line-ending normalisation would break the tests that
+# prove it.
+tests/fixtures/*.txt binary
