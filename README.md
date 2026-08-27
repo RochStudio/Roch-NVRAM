@@ -18,7 +18,7 @@ Bundled SCEWIN: **AMISCE 5.05.01.0002**.
 1. Run `install.bat` once to create `.venv` and install PySide6.
 2. Run `run.bat` and approve the administrator prompt.
 
-The app opens with nothing loaded and does not touch the firmware. Press **Export NVRAM**
+The app opens with nothing loaded and does not touch the firmware. Press **Export**
 to read the live settings. The administrator prompt still appears at launch because SCEWIN
 needs it the moment you press Export or Import. Live mode never uses a sample file.
 
@@ -27,21 +27,20 @@ needs it the moment you press Export or Import. Live mode never uses a sample fi
 These are the two halves of the SCEWIN round trip, the same split as SCEWIN's own
 `Export.bat` and `Import.bat`, and both live in the NVRAM tab:
 
-- **Export NVRAM** reads the live NVRAM through the bundled SCEWIN runtime and loads it into
-  the table. Nothing is read from the firmware until you press it.
-- **Import NVRAM...** writes a saved `nvram.txt` back. Unlike `Import.bat`, which runs SCEWIN
-  on the file as it stands, the file is first matched to the live NVRAM so the exact list of
-  settings can be confirmed, and the backup, preflight, and verification below still run. If
-  no NVRAM is loaded yet, Import reads one first so it works straight from a cold start.
+- **Export** reads the live NVRAM through the bundled SCEWIN runtime and loads it into the
+  table. Nothing is read from the firmware until you press it.
+- **Import** writes the queued changes back. Unlike `Import.bat`, which runs SCEWIN on a file
+  as it stands, you review the exact list first and the preflight, backup, and verification
+  below run around the write.
 
-Editing, loading, and applying all need an NVRAM in the table, so those buttons stay
+Editing, loading, and importing all need an NVRAM in the table, so those buttons stay
 disabled until you export one. Compare and Log work on their own files and are always
 available.
 
 ## Offline mode
 
 Run `run_offline.bat` for the dry run. It never executes SCEWIN, never writes firmware, needs
-no administrator rights, and hides the Export, Import, and Apply buttons. Compare and Log remain available.
+no administrator rights, and hides the Export and Import buttons. Compare and Log remain available.
 
 Offline mode needs a sample export in `data/` (an `nvram.txt` plus its parsed `.json`). These
 are board-specific and are not tracked in git, so a fresh clone has no `data/` folder — point
@@ -55,24 +54,23 @@ The table preserves the exact record order of `nvram.txt` and shows Setting, Hel
 Token, Offset, Width, BIOS Default, and Options/Value. Search across names, help text, tokens,
 offsets, and export IDs; filter by type or by editable/warning state.
 
-- **Export NVRAM** reads the live NVRAM (live mode only).
-- **Import NVRAM...** writes a saved export back (live mode only).
+- **Export** reads the live NVRAM (live mode only).
 - **Queue selected change** (or double-click a row) edits an entry.
 - **Load NVRAM...** queues the differences from a saved export without writing — see below.
-- **Apply** writes the queue (live mode only).
+- **Import** writes the queue (live mode only).
 
 ## Load NVRAM
 
 Queues the differences from a previously saved `nvram.txt`, for example after a Clear CMOS,
-without writing anything — use **Import NVRAM...** to queue and write in one step. The
-saved file is never imported wholesale. Its settings are matched to the live export by
+without writing anything — review them, then press **Import**. The saved file is never
+imported wholesale. Its settings are matched to the live export by
 **token + offset + width**, and every difference is queued as a normal pending change, so the
 usual preflight, backup, and verification still apply.
 
 The dialog defaults to the archive of every NVRAM the tool has captured
 (`%LOCALAPPDATA%\NVRAM\logs\nvram`) and reports how many settings will be queued, already
 match, or were skipped. It warns when the saved file's HII CRC differs from the live one.
-Nothing is written until you review the queue and press Apply.
+Nothing is written until you review the queue and press Import.
 
 ## Pending Changes tab
 
@@ -109,11 +107,11 @@ row (or use **Open NVRAM file**) to open that exact export.
 %LOCALAPPDATA%\NVRAM\logs\nvram.log             activity audit trail
 ```
 
-## Applying a change
+## Importing a change
 
 1. Queue one or more changes.
 2. Review them in **Pending Changes**.
-3. Press **Apply** and confirm the before/after summary.
+3. Press **Import** and confirm the before/after summary.
 
 Before importing, the app performs another live export and refuses to continue when:
 

@@ -460,7 +460,7 @@ class EditDialog(QDialog):
         layout.addLayout(form)
 
         warning = QLabel(
-            "This queues a change. It is written only after you press Apply and confirm."
+            "This queues a change. It is written only after you press Import and confirm."
             if live_mode
             else "Dry run: this queues a change but does not write firmware."
         )
@@ -615,24 +615,15 @@ class MainWindow(QMainWindow):
         buttons = QHBoxLayout()
         if self.live_mode:
             # The SCEWIN round trip, as separate steps: Export reads the firmware
-            # (/O) and Import writes a saved file back (/I), the same two halves
-            # SCEWIN ships as Export.bat and Import.bat.
-            export_live = QPushButton("Export NVRAM")
-            export_live.setToolTip(
+            # (/O) and Import writes the reviewed queue back (/I), the same two
+            # halves SCEWIN ships as Export.bat and Import.bat.
+            export_button = QPushButton("Export")
+            export_button.setToolTip(
                 "Read the live NVRAM through SCEWIN and load it into the table. "
                 "Nothing is read from the firmware until you press this."
             )
-            export_live.clicked.connect(self.export_live_nvram)
-            buttons.addWidget(export_live)
-            import_live = QPushButton("Import NVRAM...")
-            import_live.setToolTip(
-                "Write a saved nvram.txt back through SCEWIN. The differences against "
-                "the live NVRAM are listed for review first, and the usual backup and "
-                "verification still run."
-            )
-            import_live.clicked.connect(self.import_nvram)
-            self.apply_buttons.append(import_live)
-            buttons.addWidget(import_live)
+            export_button.clicked.connect(self.export_live_nvram)
+            buttons.addWidget(export_button)
         edit = QPushButton("Queue selected change")
         edit.clicked.connect(self.edit_selected)
         self.loaded_buttons.append(edit)
@@ -647,11 +638,15 @@ class MainWindow(QMainWindow):
         buttons.addWidget(load)
         buttons.addStretch(1)
         if self.live_mode:
-            apply_button = QPushButton("Apply")
-            apply_button.clicked.connect(self.apply_changes)
-            self.apply_buttons.append(apply_button)
-            self.loaded_buttons.append(apply_button)
-            buttons.addWidget(apply_button)
+            import_button = QPushButton("Import")
+            import_button.setToolTip(
+                "Write the queued changes through SCEWIN. A backup and a "
+                "verification pass run around the import."
+            )
+            import_button.clicked.connect(self.apply_changes)
+            self.apply_buttons.append(import_button)
+            self.loaded_buttons.append(import_button)
+            buttons.addWidget(import_button)
         layout.addLayout(buttons)
         return tab
 
@@ -684,11 +679,15 @@ class MainWindow(QMainWindow):
         buttons.addWidget(transaction)
         buttons.addWidget(export)
         if self.live_mode:
-            apply_button = QPushButton("Apply")
-            apply_button.clicked.connect(self.apply_changes)
-            self.apply_buttons.append(apply_button)
-            self.loaded_buttons.append(apply_button)
-            buttons.addWidget(apply_button)
+            import_button = QPushButton("Import")
+            import_button.setToolTip(
+                "Write the queued changes through SCEWIN. A backup and a "
+                "verification pass run around the import."
+            )
+            import_button.clicked.connect(self.apply_changes)
+            self.apply_buttons.append(import_button)
+            self.loaded_buttons.append(import_button)
+            buttons.addWidget(import_button)
         layout.addLayout(buttons)
         return tab
 
@@ -1047,7 +1046,7 @@ class MainWindow(QMainWindow):
     def _update_profile_line(self):
         if self.profile is None or self.document is None:
             self.profile_line.setText(
-                "No NVRAM loaded   |   press Export NVRAM to read the live settings"
+                "No NVRAM loaded   |   press Export to read the live settings"
             )
             return
         self.profile_line.setText(
@@ -1069,7 +1068,7 @@ class MainWindow(QMainWindow):
             "No NVRAM loaded",
             f"{action} needs an NVRAM export.\n\n"
             + (
-                "Press Export NVRAM to read the live settings first."
+                "Press Export to read the live settings first."
                 if self.live_mode
                 else "Open an export and profile from the File menu first."
             ),
@@ -1153,9 +1152,9 @@ class MainWindow(QMainWindow):
 
     def apply_changes(self):
         if not self.live_mode or self.backend is None:
-            QMessageBox.information(self, "Dry run", "Apply is disabled in offline mode.")
+            QMessageBox.information(self, "Dry run", "Import is disabled in offline mode.")
             return
-        if not self._nvram_loaded("Apply"):
+        if not self._nvram_loaded("Import"):
             return
         if not self.changes:
             QMessageBox.information(
@@ -1179,7 +1178,7 @@ class MainWindow(QMainWindow):
             if QApplication.overrideCursor() is not None:
                 self._set_busy(False)
 
-        lines = [f"Apply {len(plan.changes)} queued NVRAM change(s)?", ""]
+        lines = [f"Import {len(plan.changes)} queued NVRAM change(s)?", ""]
         for change in plan.changes[:12]:
             lines.append(f"• {change.question}: {change.old_display} → {change.new_display}")
         if len(plan.changes) > 12:
@@ -1305,7 +1304,7 @@ class MainWindow(QMainWindow):
 
         The saved file is never written wholesale. Every difference becomes a
         normal pending change, so the preflight, backup, and verification path
-        still applies whether the caller is Load NVRAM or Import NVRAM.
+        still applies to everything Load NVRAM queues.
         """
         current_by_identity = {
             identity_without_crc(setting): setting for setting in self.profile.settings
@@ -1366,7 +1365,7 @@ class MainWindow(QMainWindow):
         """Queue the differences from a saved nvram.txt (e.g. after a CMOS clear).
 
         Nothing is written: the differences land in Pending Changes for review,
-        and Apply (or Import NVRAM) performs the write.
+        and Import performs the write.
         """
         if not self._nvram_loaded("Load NVRAM"):
             return
@@ -1399,7 +1398,7 @@ class MainWindow(QMainWindow):
                 f"{already:,} already match, {missing:,} not in live export, "
                 f"{len(blocked):,} skipped.",
                 "",
-                "Nothing is written yet. Review under Pending Changes, then press Apply.",
+                "Nothing is written yet. Review under Pending Changes, then press Import.",
             ]
         )
         answer = QMessageBox.question(
@@ -1426,62 +1425,8 @@ class MainWindow(QMainWindow):
             self,
             "NVRAM loaded",
             f"Queued {len(queued):,} change(s) from the saved NVRAM.\n\n"
-            "Review them under Pending Changes, then press Apply to write them.",
+            "Review them under Pending Changes, then press Import to write them.",
         )
-
-    def import_nvram(self):
-        """Write a saved nvram.txt back through SCEWIN, like SCEWIN's Import.bat.
-
-        Import.bat runs SCEWIN on the file as it stands. This performs the same
-        write, but matches the file against the live NVRAM first so the exact list
-        of settings can be confirmed, and it keeps the stale-value preflight, the
-        backup, and the post-import verification.
-        """
-        if not self.live_mode or self.backend is None:
-            QMessageBox.information(self, "Dry run", "Import is disabled in offline mode.")
-            return
-        if not self._confirm_discard_queue(
-            "Importing replaces the queue with the differences from the saved file."
-        ):
-            return
-        if self.profile is None or self.document is None:
-            # Import.bat needs no prior export, so read the live NVRAM to diff against.
-            live = self._run_live_export("preimport")
-            if live is None:
-                return
-            self._replace_live_export(live, "Export NVRAM before import")
-
-        snapshot = self._choose_saved_nvram("Select the nvram.txt to import")
-        if snapshot is None:
-            return
-        diff = self._differences_from(snapshot)
-        if not diff.queued:
-            self._report_no_differences(snapshot, diff, "Nothing to import")
-            return
-
-        self.changes.clear()
-        for change in diff.queued:
-            self.changes[change.export_id] = change
-        self._refresh_models()
-        self._log(
-            "NVRAM_IMPORT_QUEUED",
-            f"path={snapshot.path}; queued={len(diff.queued)}; "
-            f"already_match={diff.already}; missing={diff.missing}; "
-            f"skipped={len(diff.blocked)}; saved_HII={snapshot.hii_crc32}; "
-            f"live_HII={self.document.hii_crc32}",
-        )
-        if snapshot.hii_crc32 != self.document.hii_crc32:
-            QMessageBox.warning(
-                self,
-                "HII CRC differs",
-                f"The saved NVRAM reports HII CRC {snapshot.hii_crc32} but the live "
-                f"NVRAM reports {self.document.hii_crc32}.\n\n"
-                "Settings are matched by token/offset/width instead. Review the "
-                "change list carefully before confirming the import.",
-            )
-        # apply_changes runs the preflight, backup, import, and verification, and
-        # raises the single confirmation listing exactly what will be written.
-        self.apply_changes()
 
     def remove_change(self):
         index = self.change_table.currentIndex()
@@ -1632,7 +1577,7 @@ def run(
 
     if live:
         # SCEWIN is not run here. The window opens with nothing loaded and reads
-        # the firmware only when Export NVRAM is pressed.
+        # the firmware only when Export is pressed.
         backend = ScewinBackend(project_root or Path(__file__).resolve().parents[1])
     else:
         absent = [str(path) for path in (profile_path, nvram_path) if not Path(path).is_file()]
