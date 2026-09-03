@@ -1,5 +1,33 @@
 # Changelog
 
+## 1.0.1
+
+### Quick Settings
+
+- A new **Quick Settings** tab, between NVRAM and Pending Changes, puts the overclocking
+  controls of a platform on one page in three sections -- **CPU**, **RAM**, and **GPU / PCIe** --
+  each row with its current value and an editor that starts on it. Set a value, press
+  Queue. Everything lands in the ordinary queue, so Import still runs the preflight,
+  backup, and verification around it. The tab suggests no values; it only chooses which
+  settings to show.
+- The first preset is **MSI Z790 (LGA 1700 DDR5)**, built from a stock export and a tuned
+  export of an MSI Z790 MPOWER: every setting whose value differs between the two is a
+  row, plus a standing list of controls that belong on the page whether or not the tuned
+  export touched them -- Hyper-Threading, Active P-Cores, E-Core Ratio, Lite Load, AC/DC
+  Loadline, TjMax Offset, Package C State Limit, Thermal Velocity Boost, XMP, Memory Try
+  It!, SA GV, and the common timings (tMOD, tWR, tRTP, tRFC, tRFC4, tWTR, tCCD, tRRD_S).
+  Fan curves, DMI lane coefficients, the driver installer, derived read-backs, and tZQCS
+  are left out on purpose.
+- Presets match settings by token + offset + width, never by HII CRC or by name. Those
+  identities are one vendor's layout: MSI, ASUS, ASRock, and Gigabyte differ in identities,
+  names, order, and which settings exist, so a preset is per vendor and an export from
+  another family is reported as a mismatch at the top of the tab rather than as a page of
+  disabled rows. A row the loaded board does not have says so and stays disabled. One row
+  can write several identities, which is how the per-channel copies of a DDR5 timing become
+  a single control.
+- `tools/make_quick_settings.py` builds a preset from any stock/tuned pair and lists what it
+  could not place, so Z690, Z890, and AM5 presets are two exports and one command away.
+
 ## 1.0.0
 
 First public release. Licensed GPL-3.0-or-later; third-party components, including the

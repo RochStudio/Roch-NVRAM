@@ -57,6 +57,8 @@ with open(_version_resource, "w", encoding="utf-8") as _stream:
 # in their own copies without rebuilding. See THIRD_PARTY_NOTICES.txt.
 datas = [
     ('assets/roch_nvram.ico', 'assets'),
+    # Quick Settings presets are read through the same asset root as the icon.
+    ('assets/quick_settings/*.json', 'assets/quick_settings'),
 ]
 
 hiddenimports = [

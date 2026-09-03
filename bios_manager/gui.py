@@ -36,6 +36,8 @@ from PySide6.QtWidgets import (
     QDialogButtonBox,
     QFileDialog,
     QFormLayout,
+    QGridLayout,
+    QGroupBox,
     QHBoxLayout,
     QHeaderView,
     QLabel,
@@ -43,6 +45,7 @@ from PySide6.QtWidgets import (
     QMainWindow,
     QMessageBox,
     QPushButton,
+    QScrollArea,
     QTabWidget,
     QTableView,
     QVBoxLayout,
@@ -51,6 +54,15 @@ from PySide6.QtWidgets import (
 
 from .activity_log import ActivityLogger
 from .nvram_catalog import CatalogEntry, NvramCatalog
+from .quick_settings import (
+    QuickPreset,
+    ResolvedSetting,
+    asset_root,
+    changes_for,
+    load_presets,
+    placeholders,
+    resolve,
+)
 from .compare_tools import (
     CompareResult,
     CompareRow,
@@ -75,11 +87,42 @@ from .version import APP_NAME
 
 def asset_path(name: str) -> Path:
     """Locate a bundled asset, both from source and inside a PyInstaller build."""
-    if getattr(sys, "frozen", False):
-        base = Path(getattr(sys, "_MEIPASS", Path(sys.executable).resolve().parent))
-    else:
-        base = Path(__file__).resolve().parents[1]
-    return base / "assets" / name
+    return asset_root() / name
+
+
+class QuickRow:
+    """The widgets for one Quick Settings control."""
+
+    def __init__(
+        self,
+        resolved: ResolvedSetting,
+        current: QLabel,
+        editor: QComboBox | QLineEdit,
+        button: QPushButton,
+        state: QLabel,
+    ):
+        self.resolved = resolved
+        self.current = current
+        self.editor = editor
+        self.button = button
+        self.state = state
+
+    def requested_raw(self) -> str:
+        if isinstance(self.editor, QComboBox):
+            return str(self.editor.currentData() or "")
+        return self.editor.text()
+
+    def show_current(self) -> None:
+        """Start the editor on the live value, so Queue with nothing changed is a no-op."""
+        raws = self.resolved.current_raw
+        if not raws:
+            return
+        if isinstance(self.editor, QComboBox):
+            index = self.editor.findData(raws[0])
+            if index >= 0:
+                self.editor.setCurrentIndex(index)
+        else:
+            self.editor.setText(raws[0])
 
 
 def app_icon() -> QIcon | None:
@@ -537,6 +580,8 @@ class MainWindow(QMainWindow):
         self.compare_model = CompareModel()
         self.compare_filter = CompareFilter()
         self.compare_filter.setSourceModel(self.compare_model)
+        self.quick_presets: list[QuickPreset] = load_presets()
+        self.quick_rows: list[QuickRow] = []
 
         self.setWindowTitle(
             APP_NAME if self.live_mode
@@ -600,6 +645,7 @@ class MainWindow(QMainWindow):
 
         tabs = QTabWidget()
         tabs.addTab(self._settings_tab(), "NVRAM")
+        tabs.addTab(self._quick_tab(), "Quick Settings")
         tabs.addTab(self._changes_tab(), "Pending Changes")
         tabs.addTab(self._compare_tab(), "Compare")
         tabs.addTab(self._log_tab(), "Log")
@@ -829,6 +875,222 @@ class MainWindow(QMainWindow):
     def _log(self, event: str, message: str):
         # Audit trail on disk (nvram.log). The Log tab shows the NVRAM catalog.
         self.logger.write(event, message)
+
+    # ----- Quick Settings ---------------------------------------------------
+
+    def _quick_tab(self) -> QWidget:
+        """The overclocking controls of a platform, one page, three sections."""
+        tab = QWidget()
+        layout = QVBoxLayout(tab)
+
+        top = QHBoxLayout()
+        top.addWidget(QLabel("Preset:"))
+        self.quick_preset_box = QComboBox()
+        for preset in self.quick_presets:
+            self.quick_preset_box.addItem(preset.name, preset)
+        self.quick_preset_box.currentIndexChanged.connect(self._rebuild_quick_rows)
+        top.addWidget(self.quick_preset_box, 1)
+        layout.addLayout(top)
+
+        self.quick_notice = QLabel()
+        self.quick_notice.setWordWrap(True)
+        self.quick_notice.setStyleSheet("font-weight: 600; padding: 4px;")
+        layout.addWidget(self.quick_notice)
+
+        self.quick_scroll = QScrollArea()
+        self.quick_scroll.setWidgetResizable(True)
+        layout.addWidget(self.quick_scroll, 1)
+        self._rebuild_quick_rows()
+        return tab
+
+    def _current_quick_preset(self) -> QuickPreset | None:
+        box = getattr(self, "quick_preset_box", None)
+        if box is None or box.currentIndex() < 0:
+            return None
+        return box.currentData()
+
+    def _rebuild_quick_rows(self, *_):
+        """Lay the selected preset out against whatever NVRAM is loaded.
+
+        Rebuilt whenever the preset changes or a different export is shown, so
+        the rows always hold the live setting records they will write to.
+        """
+        preset = self._current_quick_preset()
+        self.quick_rows = []
+        container = QWidget()
+        body = QVBoxLayout(container)
+        if preset is None:
+            self.quick_notice.setText(
+                "No Quick Settings presets found. Presets live in assets/quick_settings/ and "
+                "are built with tools/make_quick_settings.py from a stock and a tuned export."
+            )
+            body.addStretch(1)
+            self.quick_scroll.setWidget(container)
+            return
+
+        loaded = self.profile is not None and self.document is not None
+        groups = resolve(preset, self.profile, self.document) if loaded else placeholders(preset)
+        origin = (
+            preset.source.get("board")
+            or preset.source.get("vendor")
+            or preset.platform
+            or "the tuned export"
+        )
+        total = preset.setting_count
+        how_to = (
+            "Set a new value and press Queue, then review under Pending Changes and "
+            "press Import."
+        )
+        plain = "font-weight: 600; padding: 4px;"
+        warn = plain + " color: #b45309;"
+        if not loaded:
+            text, style = (
+                f"{preset.name}: {total} controls. "
+                "No NVRAM loaded: current values appear after you press Export.",
+                plain,
+            )
+        else:
+            # Identities are one vendor's layout. Say so up front when the loaded
+            # export is from a different family, rather than showing a page of
+            # disabled rows and leaving the reason to the tooltips.
+            available = sum(1 for _section, rows in groups for row in rows if row.available)
+            if available == 0:
+                text, style = (
+                    f"{preset.name} does not match the loaded NVRAM: 0 of {total} controls "
+                    f"were found. It was built from {origin}. MSI, ASUS, ASRock, and Gigabyte "
+                    "firmware lay their settings out differently, so each vendor needs a preset "
+                    "built from its own stock and tuned exports (tools/make_quick_settings.py). "
+                    "Nothing here can be queued.",
+                    warn,
+                )
+            elif available < total:
+                text, style = (
+                    f"{preset.name}: {available} of {total} controls apply to the loaded NVRAM; "
+                    f"the rest are not on this board or are blocked. {how_to}",
+                    plain,
+                )
+            else:
+                text, style = (
+                    f"{preset.name}: all {total} controls apply. {how_to}",
+                    plain,
+                )
+        self.quick_notice.setText(text)
+        self.quick_notice.setStyleSheet(style)
+
+        for section, rows in groups:
+            group = QGroupBox(section.title)
+            grid = QGridLayout(group)
+            for column, stretch in ((0, 3), (1, 2), (2, 3), (4, 2)):
+                grid.setColumnStretch(column, stretch)
+            for column, text in enumerate(("Setting", "Current", "New value")):
+                header = QLabel(text)
+                header.setStyleSheet("font-weight: 600; color: #6b7280;")
+                grid.addWidget(header, 0, column)
+
+            for position, resolved in enumerate(rows, start=1):
+                spec = resolved.spec
+                name = QLabel(spec.name)
+                tip = [spec.help or "No firmware help text."]
+                tip.append("Identities: " + ", ".join(spec.identities))
+                if resolved.missing:
+                    tip.append("Not on this board: " + ", ".join(resolved.missing))
+                if resolved.blocked:
+                    tip.append("Blocked: " + "; ".join(resolved.blocked))
+                name.setToolTip("\n".join(tip))
+                current = QLabel()
+                editor: QComboBox | QLineEdit
+                if spec.kind == "options":
+                    editor = QComboBox()
+                    seen: set[str] = set()
+                    template = resolved.targets[0] if resolved.targets else {}
+                    for option in template.get("options") or []:
+                        code = str(option.get("code_hex") or "").upper()
+                        if code in seen:
+                            continue
+                        seen.add(code)
+                        editor.addItem(f"{option.get('label')}  [{code}]", code)
+                else:
+                    editor = QLineEdit()
+                    editor.setPlaceholderText("Decimal or 0x-prefixed hexadecimal")
+                button = QPushButton("Queue")
+                state = QLabel()
+                row = QuickRow(resolved, current, editor, button, state)
+                row.show_current()
+                button.clicked.connect(lambda _=False, r=row: self._queue_quick_row(r))
+                for column, widget in enumerate((name, current, editor, button, state)):
+                    grid.addWidget(widget, position, column)
+                self.quick_rows.append(row)
+            body.addWidget(group)
+        body.addStretch(1)
+        self.quick_scroll.setWidget(container)
+        self._refresh_quick_rows()
+
+    def _refresh_quick_rows(self):
+        """Current values, queued state, and what can be pressed."""
+        loaded = self.profile is not None and self.document is not None
+        for row in self.quick_rows:
+            resolved = row.resolved
+            usable = loaded and resolved.available
+            row.editor.setEnabled(usable)
+            row.button.setEnabled(usable)
+            row.current.setText(resolved.current_display() if loaded else "—")
+            queued = [
+                self.changes[export_id]
+                for export_id in (str(t.get("export_id") or "") for t in resolved.targets)
+                if export_id in self.changes
+            ]
+            # A blocked row has no targets either, so test blocked first or a
+            # kind mismatch reads as the setting being absent.
+            if not loaded:
+                text, color = "", ""
+            elif resolved.blocked:
+                text, color = "blocked", "#b45309"
+            elif not resolved.targets:
+                text, color = "not on this board", "#6b7280"
+            elif queued:
+                text, color = f"queued → {queued[0].new_display}", "#d97706"
+            else:
+                text, color = "", ""
+            row.state.setText(text)
+            row.state.setStyleSheet(f"color: {color};" if color else "")
+
+    def _queue_quick(
+        self, requests: list[tuple[ResolvedSetting, str]], via: str
+    ) -> tuple[int, int, list[str]]:
+        """Queue (control, raw value) pairs. Returns (queued, reset, errors)."""
+        queued = reset = 0
+        errors: list[str] = []
+        for resolved, raw in requests:
+            changes, reset_ids, row_errors = changes_for(resolved, raw, self.profile, self.document)
+            errors.extend(row_errors)
+            for export_id in reset_ids:
+                dropped = self.changes.pop(export_id, None)
+                if dropped is not None:
+                    reset += 1
+                    self._log(
+                        "CHANGE_REMOVED",
+                        f"{dropped.question}: queued change was reset to the current value ({via}).",
+                    )
+            for change in changes:
+                self.changes[change.export_id] = change
+                queued += 1
+                self._log(
+                    "CHANGE_QUEUED",
+                    f"{change.question}: {change.old_display} -> {change.new_display}; "
+                    f"token={change.token_hex}; offset={change.offset_hex}; "
+                    f"width={change.width_hex}; via {via}",
+                )
+        self._refresh_models()
+        return queued, reset, errors
+
+    def _queue_quick_row(self, row: QuickRow):
+        if not self._nvram_loaded("Queueing a Quick Setting"):
+            return
+        _queued, _reset, errors = self._queue_quick(
+            [(row.resolved, row.requested_raw())], "Quick Settings"
+        )
+        if errors:
+            QMessageBox.warning(self, "Cannot queue change", "\n".join(errors))
 
     def _catalog_capture(
         self,
@@ -1117,6 +1379,7 @@ class MainWindow(QMainWindow):
         self.settings_model.endResetModel()
         self.change_model.refresh()
         self.filter_model.invalidateFilter()
+        self._rebuild_quick_rows()
         self._update_profile_line()
         self._update_status()
         self._update_loaded_actions()
@@ -1459,6 +1722,7 @@ class MainWindow(QMainWindow):
     def _refresh_models(self):
         self.settings_model.refresh()
         self.change_model.refresh()
+        self._refresh_quick_rows()
         self._update_status()
 
     def _update_status(self):

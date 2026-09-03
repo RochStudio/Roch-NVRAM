@@ -1,0 +1,1320 @@
+{
+  "schema_version": 1,
+  "name": "MSI Z790 (LGA 1700 DDR5)",
+  "platform": "msi-z790-ddr5",
+  "source": {
+    "vendor": "MSI",
+    "board": "MSI MPG Z790 MPOWER",
+    "stock_hii_crc32": "AE80FC74",
+    "tuned_hii_crc32": "84D169FF",
+    "amisce_version": "5.05.01.0002",
+    "stock_created_on": "09/03/26 at 16:04:15",
+    "tuned_created_on": "09/03/26 at 16:02:11"
+  },
+  "sections": [
+    {
+      "title": "CPU",
+      "settings": [
+        {
+          "name": "Active E-Cores",
+          "kind": "options",
+          "tuned": "00",
+          "tuned_label": "0",
+          "help": "Number of E-cores to enable in each processor package. Note: Number of Cores and E-cores are looked at together. When both are {0,0}, Pcode will enable all cores.",
+          "identities": [
+            "1C7:22F:01"
+          ]
+        },
+        {
+          "name": "EIST",
+          "kind": "options",
+          "tuned": "00",
+          "tuned_label": "Disabled",
+          "help": "Allows more than two frequency ranges to be supported.",
+          "identities": [
+            "272C:09:01"
+          ]
+        },
+        {
+          "name": "Intel Speed Shift Technology",
+          "kind": "options",
+          "tuned": "00",
+          "tuned_label": "Disabled",
+          "help": "Enable/Disable Intel(R) Speed Shift Technology support. Enabling will expose the CPPC v2 interface to allow for hardware controlled P-states.",
+          "identities": [
+            "1DC:0B:01"
+          ]
+        },
+        {
+          "name": "Intel Turbo Boost",
+          "kind": "options",
+          "tuned": "00",
+          "tuned_label": "Disabled",
+          "help": "Enable/Disable processor Turbo Mode (requires EMTTM enabled too). AUTO means enabled.",
+          "identities": [
+            "272E:16:01"
+          ]
+        },
+        {
+          "name": "Intel C-State",
+          "kind": "options",
+          "tuned": "00",
+          "tuned_label": "Disabled",
+          "help": "Enable/Disable CPU Power Management. Allows CPU to go to C states when it's not 100% utilized.",
+          "identities": [
+            "1F1:14:01"
+          ]
+        },
+        {
+          "name": "Power Limit 1",
+          "kind": "value",
+          "tuned": "4096",
+          "tuned_label": "",
+          "help": "Power Limit 1 in Milli Watts. BIOS will round to the nearest 1/8W when programming. 0 = no custom override. For 12.50W, enter 12500. Overclocking SKU: Value must be between Max and Min Power Limits (specified by PACKAGE_POWER_SKU_MSR). Other SKUs: This value must be between Min Power Limit and Processor Base Power (TDP) Limit. If value is 0, BIOS will program Processor Base Power (TDP) value.",
+          "identities": [
+            "24F:17:04"
+          ]
+        },
+        {
+          "name": "Power Limit 1 Time Window",
+          "kind": "options",
+          "tuned": "80",
+          "tuned_label": "128",
+          "help": "Power Limit 1 Time Window value in seconds. The value may vary from 0 to 128. 0 = default value. Defines time window which Processor Base Power (TDP) value should be maintained.",
+          "identities": [
+            "250:1C:01"
+          ]
+        },
+        {
+          "name": "Power Limit 2",
+          "kind": "value",
+          "tuned": "4096",
+          "tuned_label": "",
+          "help": "Power Limit 2 value in Milli Watts. BIOS will round to the nearest 1/8W when programming. If the value is 0, BIOS will program this value as 1.25*Processor Base Power (TDP). For 12.50W, enter 12500. Processor applies control policies such that the package power does not exceed this limit.",
+          "identities": [
+            "252:1E:04"
+          ]
+        },
+        {
+          "name": "CPU Cooler Tuning",
+          "kind": "options",
+          "tuned": "03",
+          "tuned_label": "MSI Unlimited Settings (PL1: 4096W)",
+          "help": "Adapting CPU power limit profiles by selecting CPU cooler type.",
+          "identities": [
+            "29C0:F8C:01"
+          ]
+        },
+        {
+          "name": "P-Core Ratio",
+          "kind": "value",
+          "tuned": "54",
+          "tuned_label": "",
+          "help": "Sets the P-Core ratio that is used to determine CPU clock speed.",
+          "identities": [
+            "28F6:C66:01"
+          ]
+        },
+        {
+          "name": "CPU Ratio Mode",
+          "kind": "options",
+          "tuned": "01",
+          "tuned_label": "Fixed Mode",
+          "help": "Selects the CPU Ratio operating mode.",
+          "identities": [
+            "28F8:C68:01"
+          ]
+        },
+        {
+          "name": "AVX Support",
+          "kind": "options",
+          "tuned": "03",
+          "tuned_label": "Enabled",
+          "help": "Selected AVX instruction set will not be activated and might benefit CPU overclocing.",
+          "identities": [
+            "1210:CAC:01"
+          ]
+        },
+        {
+          "name": "AVX-512 Support",
+          "kind": "options",
+          "tuned": "01",
+          "tuned_label": "Disabled",
+          "help": "Selected AVX-512 instruction set will not be activated and might benefit CPU overclocing.",
+          "identities": [
+            "1211:CAD:01"
+          ]
+        },
+        {
+          "name": "CPU Ratio Offset When Running AVX",
+          "kind": "options",
+          "tuned": "00",
+          "tuned_label": "0",
+          "help": "Sets the CPU ratio offset value to lower the CPU core ratio to prevent the CPU from overheating when running AVX instructions.",
+          "identities": [
+            "1215:CAE:01"
+          ]
+        },
+        {
+          "name": "AVX Voltage Guardband Scale",
+          "kind": "value",
+          "tuned": "0",
+          "tuned_label": "",
+          "help": "Input value between 0 to 255 for finetuning CPU Core voltage when running AVX application. A value of 0 means no extra voltage on AVX command. Value 128 means remains the default voltage guardband values. Value 255 means two times of voltage guardband values given. Default value is 128. Higher Guardband scale value will be applied between AVX and AVX-512.",
+          "identities": [
+            "1216:CB0:02"
+          ]
+        },
+        {
+          "name": "Ring Down Bin",
+          "kind": "options",
+          "tuned": "01",
+          "tuned_label": "Disabled",
+          "help": "Enables or disables Ring Down Bin feature. Enabled - CPU will down bin the ring ratio, which means the requested max ring ratio will not be observed. Disable - CPU will not down bin the ring ratio and the requested ring ratio limit will be observed.",
+          "identities": [
+            "1218:CAA:01"
+          ]
+        },
+        {
+          "name": "Ring Ratio Min",
+          "kind": "value",
+          "tuned": "45",
+          "tuned_label": "",
+          "help": "Sets the Ring Ratio Min item.",
+          "identities": [
+            "1219:CA9:01"
+          ]
+        },
+        {
+          "name": "Ring Ratio",
+          "kind": "value",
+          "tuned": "45",
+          "tuned_label": "",
+          "help": "Sets the ring ratio.",
+          "identities": [
+            "2936:CA8:01"
+          ]
+        },
+        {
+          "name": "CPU Core Voltage Mode",
+          "kind": "options",
+          "tuned": "02",
+          "tuned_label": "Override Mode",
+          "help": "Sets the CPU Core voltage mode for adapting different CPU running requirements.",
+          "identities": [
+            "2938:CB3:01"
+          ]
+        },
+        {
+          "name": "CPU Core Voltage",
+          "kind": "value",
+          "tuned": "1290",
+          "tuned_label": "",
+          "help": "Sets the CPU Core voltage, default value is dynamic VID. If set to \"Auto\", BIOS will set these voltages automatically or you can set it manually.  Max: 1.720V   Min: 0.600V",
+          "identities": [
+            "2939:CB4:02"
+          ]
+        },
+        {
+          "name": "CPU Current Limit(A)",
+          "kind": "value",
+          "tuned": "512",
+          "tuned_label": "",
+          "help": "Sets maximum current limit of CPU package in Turbo Boost mode. When the current is over the specified limit value, the CPU will automatically reduce the core frequency for reducing the current.  Max: 512A  Min: 1A",
+          "identities": [
+            "14E1:F2C:02"
+          ]
+        },
+        {
+          "name": "CPU Under Voltage Protection",
+          "kind": "options",
+          "tuned": "01",
+          "tuned_label": "Disabled",
+          "help": "Sets CPU Under Voltage Protection setting.",
+          "identities": [
+            "14E8:F64:01"
+          ]
+        },
+        {
+          "name": "TVB Ratio Clipping",
+          "kind": "options",
+          "tuned": "01",
+          "tuned_label": "Disabled",
+          "help": "Enable = Core frequency reduction when CPU temperature reaches threshold for processor with Thermal Velocity Boost feature. Disable it to potentially achieve higher frequencies when temperature is high.",
+          "identities": [
+            "14EC:F67:01"
+          ]
+        },
+        {
+          "name": "TVB Ratio Clipping Enhanced",
+          "kind": "options",
+          "tuned": "01",
+          "tuned_label": "Disabled",
+          "help": "Enable = Core Frequency reduction when CPU temperature reaches one of the thresholds for processor with Enhanced Thermal Velocity Boost feature. Disable it to potentially achieve higher frequencies when temperature is higher than thresholds.",
+          "identities": [
+            "14ED:F69:01"
+          ]
+        },
+        {
+          "name": "TVB Voltage Optimizations",
+          "kind": "options",
+          "tuned": "01",
+          "tuned_label": "Disabled",
+          "help": "Enable = Thermally based voltage optimization for processor with Thermal Velocity Boost feature. Disable it to have better stability when overclocking.",
+          "identities": [
+            "14EE:F68:01"
+          ]
+        },
+        {
+          "name": "IA CEP Support",
+          "kind": "options",
+          "tuned": "01",
+          "tuned_label": "Disabled",
+          "help": "Enables or disables IA CEP (Current Excursion Protection) support.",
+          "identities": [
+            "14F3:FBD:01"
+          ]
+        },
+        {
+          "name": "IA CEP Support For 14th",
+          "kind": "options",
+          "tuned": "01",
+          "tuned_label": "Disabled",
+          "help": "Enables or disables IA CEP (Current Excursion Protection) support.",
+          "identities": [
+            "14F4:FBF:01"
+          ]
+        },
+        {
+          "name": "CPU Loadline Calibration Control",
+          "kind": "options",
+          "tuned": "31",
+          "tuned_label": "Mode 6",
+          "help": "The CPU voltage will decrease proportionally according to CPU loading. Higher load-line calibration could get higher voltage and good overclocking performance, but increase the temperature of the CPU and VRM.",
+          "identities": [
+            "159C:123D:02"
+          ]
+        },
+        {
+          "name": "CPU Over Voltage Protection",
+          "kind": "options",
+          "tuned": "190",
+          "tuned_label": "400 mV",
+          "help": "Sets the voltage limit for CPU over-voltage protection. If set to \"Auto\", BIOS will configure this setting automatically. Higher voltage provides less protection and may damage the system.",
+          "identities": [
+            "159F:1242:02"
+          ]
+        },
+        {
+          "name": "CPU Over Current Protection",
+          "kind": "options",
+          "tuned": "1284",
+          "tuned_label": "Enhanced",
+          "help": "Sets the current limit for CPU over-current protection. If set to \"Auto\", BIOS will configure this setting automatically. Higher voltage provides less protection and may damage the system.",
+          "identities": [
+            "15A0:1244:02"
+          ]
+        },
+        {
+          "name": "CPU Switching Frequency",
+          "kind": "options",
+          "tuned": "1F4",
+          "tuned_label": "500 KHz",
+          "help": "Sets the PWM working speed to stabilize CPU Core voltage and minimize ripple range. Increasing the PWM working speed will cause higher temperature of MOSFET. So please make sure a cooling solution is well-prepared for MOSFET before you increase the value. If set to \"Auto\", BIOS will configure this setting automatically.",
+          "identities": [
+            "15A1:1246:02"
+          ]
+        },
+        {
+          "name": "CPU VRM Over Temperature Protection",
+          "kind": "options",
+          "tuned": "96",
+          "tuned_label": "150",
+          "help": "Enables or disables the CPU VRM over-temperature protection.",
+          "identities": [
+            "15A2:1248:01"
+          ]
+        },
+        {
+          "name": "Active P-Cores",
+          "kind": "options",
+          "tuned": "FF",
+          "tuned_label": "All",
+          "help": "Number of P-cores to enable in each processor package. Note: Number of Cores and E-cores are looked at together. When both are {0,0}, Pcode will enable all cores.",
+          "identities": [
+            "1C6:06:01"
+          ]
+        },
+        {
+          "name": "Hyper-Threading",
+          "kind": "options",
+          "tuned": "01",
+          "tuned_label": "Enabled",
+          "help": "Enable or Disable Hyper-Threading Technology.",
+          "identities": [
+            "2727:05:01"
+          ]
+        },
+        {
+          "name": "Package C State Limit",
+          "kind": "options",
+          "tuned": "FF",
+          "tuned_label": "Auto",
+          "help": "Maximum Package C State Limit Setting. Cpu Default: Leaves to Factory default value.Auto: Initializes to deepest available Package C State Limit.",
+          "identities": [
+            "1F8:4B:01"
+          ]
+        },
+        {
+          "name": "AC Loadline",
+          "kind": "value",
+          "tuned": "0",
+          "tuned_label": "",
+          "help": "AC Loadline defined in 1/100 mOhms. A value of 100 = 1.00 mOhm, and 1255 = 12.55 mOhm. Range is 0-6249 (0-62.49 mOhms). 0 = AUTO/HW default. Uses BIOS mailbox command 0x2.",
+          "identities": [
+            "277:132:02",
+            "28A:134:02",
+            "29C:136:02"
+          ]
+        },
+        {
+          "name": "DC Loadline",
+          "kind": "value",
+          "tuned": "0",
+          "tuned_label": "",
+          "help": "DC Loadline defined in 1/100 mOhms. A value of 100 = 1.00 mOhm, and 1255 = 12.55 mOhm. Range is 0-6249 (0-62.49 mOhms). 0 = AUTO/HW default. Uses BIOS mailbox command 0x2.",
+          "identities": [
+            "278:13C:02",
+            "28B:13E:02",
+            "29D:140:02"
+          ]
+        },
+        {
+          "name": "TjMax Offset",
+          "kind": "value",
+          "tuned": "0",
+          "tuned_label": "",
+          "help": "TjMax Offset. Specified value here is clipped by pCode (125 - TjMax Offset) to support TjMax in the range of 62 to 115 deg Celsius. Uses Mailbox MSR 0x37, command 0x01. Range 10 - 63, set back to 0 for default if not in the range. 0 = No offset.",
+          "identities": [
+            "287F:1F8:01"
+          ]
+        },
+        {
+          "name": "Thermal Velocity Boost",
+          "kind": "options",
+          "tuned": "01",
+          "tuned_label": "Enabled",
+          "help": "This service controls Core frequency reduction caused by high package temperatures for processors that implement the Intel Thermal Velocity Boost (TVB) feature. It is required to be disabled for supporting overclocking at frequencies higher than the default max turbo frequency. Default is disabled. Uses Overclocking Mailbox command 0x18/0x19.",
+          "identities": [
+            "40D:2E3:01"
+          ]
+        },
+        {
+          "name": "Enhanced Thermal Velocity Boost",
+          "kind": "options",
+          "tuned": "01",
+          "tuned_label": "Enabled",
+          "help": "If enabled the user will be clipped when the temperatures reach the default threshold on supported products.  Recommended to disable for overclocking.",
+          "identities": [
+            "413:378:01"
+          ]
+        },
+        {
+          "name": "E-Core Ratio Apply Mode",
+          "kind": "options",
+          "tuned": "01",
+          "tuned_label": "All Core",
+          "help": "Sets applied mode for E-Core ratio. This item only appears when a CPU that support \"Turbo Boost\" is installed.",
+          "identities": [
+            "28FA:C6A:01"
+          ]
+        },
+        {
+          "name": "E-Core Ratio",
+          "kind": "value",
+          "tuned": "0",
+          "tuned_label": "",
+          "help": "Sets the E-Core ratio that is used to determine CPU clock speed.",
+          "identities": [
+            "28F7:C67:01"
+          ]
+        },
+        {
+          "name": "CPU Core Voltage Offset Mode",
+          "kind": "options",
+          "tuned": "00",
+          "tuned_label": "",
+          "help": "Selects the voltage offset modes.",
+          "identities": [
+            "293A:CB6:01"
+          ]
+        },
+        {
+          "name": "CPU Core Voltage Offset",
+          "kind": "value",
+          "tuned": "0",
+          "tuned_label": "",
+          "help": "Set the offset values for these voltages.",
+          "identities": [
+            "293B:CB7:02"
+          ]
+        },
+        {
+          "name": "CPU Lite Load Control",
+          "kind": "options",
+          "tuned": "00",
+          "tuned_label": "Normal",
+          "help": "Sets the CPU Lite Load Control.",
+          "identities": [
+            "299E:F65:01"
+          ]
+        },
+        {
+          "name": "CPU Lite Load",
+          "kind": "options",
+          "tuned": "00",
+          "tuned_label": "Auto",
+          "help": "Sets the CPU Lite Load mode. Higher mode loads the higher CPU voltage that could stablize the system.",
+          "identities": [
+            "14E4:F66:01"
+          ]
+        }
+      ]
+    },
+    {
+      "title": "RAM",
+      "settings": [
+        {
+          "name": "Power Down Mode",
+          "kind": "options",
+          "tuned": "00",
+          "tuned_label": "No Power Down",
+          "help": "CKE Power Down Mode Control",
+          "identities": [
+            "276E:1A2:01",
+            "1359:F24:01"
+          ]
+        },
+        {
+          "name": "MRC Fast Boot",
+          "kind": "options",
+          "tuned": "00",
+          "tuned_label": "Disabled",
+          "help": "Enable/Disable fast path thru the MRC",
+          "identities": [
+            "615:18F:01"
+          ]
+        },
+        {
+          "name": "DRAM Reference Clock",
+          "kind": "options",
+          "tuned": "01",
+          "tuned_label": "100MHz",
+          "help": "Sets the DRAM reference clock. The valid value range depends on the installed CPU.",
+          "identities": [
+            "2964:D37:01"
+          ]
+        },
+        {
+          "name": "CPU IMC : DRAM Clock",
+          "kind": "options",
+          "tuned": "02",
+          "tuned_label": "1/2 : 1 (Gear2)",
+          "help": "Select 1 : 1 (Gear1) for higher bandwidth and lower latency and 1/2 : 1 (Gear2) for balancing bandwidth and latency and 1/4 : 1 (Gear4) for lower bandwidth and higher latency.",
+          "identities": [
+            "2965:D38:01"
+          ]
+        },
+        {
+          "name": "DRAM Frequency (200)",
+          "kind": "value",
+          "tuned": "200",
+          "tuned_label": "",
+          "help": "Sets the DRAM frequency. According to platform design, the DRAM frequency is formatted by \"Memory Ratio * 2 * Ref. Clock * CPU BCLK\".",
+          "identities": [
+            "2966:D39:01"
+          ]
+        },
+        {
+          "name": "DRAM Frequency (8200 G2 (82x1.00x100.00))",
+          "kind": "options",
+          "tuned": "CB",
+          "tuned_label": "8200 G2 (82x1.00x100.00)",
+          "help": "Sets the DRAM frequency. According to platform design, the DRAM frequency is formatted by \"Memory Ratio * 2 * Ref. Clock * CPU BCLK\".",
+          "identities": [
+            "296D:D40:01"
+          ]
+        },
+        {
+          "name": "DRAM Frequency (8000 G2 (80x1.00x100.00))",
+          "kind": "options",
+          "tuned": "C8",
+          "tuned_label": "8000 G2 (80x1.00x100.00)",
+          "help": "Sets the DRAM frequency. According to platform design, the DRAM frequency is formatted by \"Memory Ratio * 2 * Ref. Clock * CPU BCLK\".",
+          "identities": [
+            "296E:D41:01"
+          ]
+        },
+        {
+          "name": "Memory Fast Boot",
+          "kind": "options",
+          "tuned": "04",
+          "tuned_label": "Slow Training",
+          "help": "Enables or disables the initiation and training for memory every booting. Adjust slow training to help booting when the system boot environment changes.",
+          "identities": [
+            "1223:E68:01"
+          ]
+        },
+        {
+          "name": "CPU SA Voltage Mode",
+          "kind": "options",
+          "tuned": "02",
+          "tuned_label": "Override Mode",
+          "help": "Sets the CPU SA voltage mode for adapting different CPU running requirements.",
+          "identities": [
+            "2942:CBF:01"
+          ]
+        },
+        {
+          "name": "CPU SA Voltage",
+          "kind": "value",
+          "tuned": "1200",
+          "tuned_label": "",
+          "help": "Sets the CPU SA voltage, default value is dynamic VID. If set to \"Auto\", BIOS will set these voltages automatically or you can set it manually.  Max: 1.600V   Min: 0.600V",
+          "identities": [
+            "2943:CC0:02"
+          ]
+        },
+        {
+          "name": "CPU VDDQ Voltage",
+          "kind": "value",
+          "tuned": "1290",
+          "tuned_label": "",
+          "help": "Sets the CPU VDDQ Voltage.",
+          "identities": [
+            "1227:F11:02"
+          ]
+        },
+        {
+          "name": "CPU VDD2 Voltage",
+          "kind": "value",
+          "tuned": "1410",
+          "tuned_label": "",
+          "help": "Sets the CPU VDD2 voltage, default value is 1.120V.  If set to \"Auto\", BIOS will set   these voltages automatically or you can set it manually.  Max: 2.200V  Min: 0.850V",
+          "identities": [
+            "1228:126A:02"
+          ]
+        },
+        {
+          "name": "DRAM Voltage",
+          "kind": "value",
+          "tuned": "1470",
+          "tuned_label": "",
+          "help": "Support 1.435V Up       Sets the DRAM voltage, default value is 1.100V. If set to \"Auto\", BIOS will set these voltages automatically or you can set it manually.",
+          "identities": [
+            "29C5:F93:02"
+          ]
+        },
+        {
+          "name": "DRAM VDDQ Voltage",
+          "kind": "value",
+          "tuned": "1410",
+          "tuned_label": "",
+          "help": "Support 1.435V Up       Sets the DRAM VDDQ voltage, default value is 1.100V. If set to \"Auto\", BIOS will set these voltages automatically or you can set it manually.",
+          "identities": [
+            "1233:F9D:02"
+          ]
+        },
+        {
+          "name": "DRAM VPP Voltage",
+          "kind": "value",
+          "tuned": "1800",
+          "tuned_label": "",
+          "help": "Sets the DRAM VPP Voltage, default value is 1.800V. If set to \"Auto\", BIOS will set these voltages automatically or you can set it manually.",
+          "identities": [
+            "1234:FA7:02"
+          ]
+        },
+        {
+          "name": "Command Rate",
+          "kind": "options",
+          "tuned": "02",
+          "tuned_label": "2N",
+          "help": "Command Rate, 1N is follow intel code set N:1 mode ratio 3 in register, Real 1N is direct set 1N mode in register.",
+          "identities": [
+            "124F:D47:02",
+            "129F:DB1:02"
+          ]
+        },
+        {
+          "name": "tCL",
+          "kind": "value",
+          "tuned": "38",
+          "tuned_label": "",
+          "help": "CAS Latency (CL) is Column Address Strobe latency.   It isthe clock cycle required to access and read a particular column in the current row.   If you set this item smaller, system will run faster but might be more unstable.  Please set it depends on memory module.",
+          "identities": [
+            "1251:D49:02",
+            "12A1:DB3:02"
+          ]
+        },
+        {
+          "name": "tRCD",
+          "kind": "value",
+          "tuned": "50",
+          "tuned_label": "",
+          "help": "tRCD is Timing of RAS to CAS Delay.   It is the clock cycle delay between activating Row Address Strobe   and the start to read Column Address Strobe.   If you set this item smaller,system will run faster but might be more unstable.   Please set it depends on memory module.",
+          "identities": [
+            "1252:D4B:02",
+            "12A2:DB5:02"
+          ]
+        },
+        {
+          "name": "tRCDW",
+          "kind": "value",
+          "tuned": "16",
+          "tuned_label": "",
+          "help": "tRCDW",
+          "identities": [
+            "1253:E29:02"
+          ]
+        },
+        {
+          "name": "tRP",
+          "kind": "value",
+          "tuned": "50",
+          "tuned_label": "",
+          "help": "tRP is Timing of RAS Precharge;   the clock cycle time required to switch from one Row Address to the next Row Address,   for example, switch internal memory banks.   If you set this item smaller, system will run faster but might be more unstable.   Please set it depends on memory module.",
+          "identities": [
+            "1254:D4D:02",
+            "12A4:DB7:02"
+          ]
+        },
+        {
+          "name": "tRAS",
+          "kind": "value",
+          "tuned": "62",
+          "tuned_label": "",
+          "help": "tRAS is Timing of Row Address Strobe;   the timing of active to precharge delay between the precharge   and activation of row data access.   If you set this item smaller, system will run faster but might be more unstable.   Please set it depends on memory module.",
+          "identities": [
+            "1255:D4F:02",
+            "12A5:DB9:02"
+          ]
+        },
+        {
+          "name": "tRFC2",
+          "kind": "value",
+          "tuned": "544",
+          "tuned_label": "",
+          "help": "tRFC is Timing of Refresh to Active/Refresh cycle time;   the amount of cycles timing between any Row Refresh command and the next Row Refresh command.   If you set this item smaller, system will run faster but might be more unstable.   Please set it depends on memory module.",
+          "identities": [
+            "1257:D51:02",
+            "12A7:DBB:02"
+          ]
+        },
+        {
+          "name": "tRFCPB",
+          "kind": "value",
+          "tuned": "442",
+          "tuned_label": "",
+          "help": "tRFCPB",
+          "identities": [
+            "1259:E3B:04"
+          ]
+        },
+        {
+          "name": "tREFI",
+          "kind": "value",
+          "tuned": "24575",
+          "tuned_label": "",
+          "help": "tREFI is Timing of Refresh to Active/Refresh cycle time;   the amount of cycles timing between any Row Refresh command and the next Row Refresh command.   If you set this item smaller, system will run faster but might be more unstable.   Please set it depends on memory module.",
+          "identities": [
+            "125A:E1B:04"
+          ]
+        },
+        {
+          "name": "tRRD",
+          "kind": "value",
+          "tuned": "8",
+          "tuned_label": "",
+          "help": "tRRD is RAS to RAS delay;   the minimum delay timing of continuous active or precharge Row data command at same memory module.   If you set this item smaller, system will run faster but might be more unstable.   Please set it depends on memory module.",
+          "identities": [
+            "1262:D57:02",
+            "12B2:DC1:02"
+          ]
+        },
+        {
+          "name": "tRRD_L",
+          "kind": "value",
+          "tuned": "8",
+          "tuned_label": "",
+          "help": "ACTIVE to ACTIVE command period, different bank group.",
+          "identities": [
+            "1263:D85:02",
+            "12B3:DEF:02"
+          ]
+        },
+        {
+          "name": "tFAW",
+          "kind": "value",
+          "tuned": "32",
+          "tuned_label": "",
+          "help": "Four Activate Window. Specifies the time window in which four activates are allowed the same rank.",
+          "identities": [
+            "1268:D5B:02",
+            "12B8:DC5:02"
+          ]
+        },
+        {
+          "name": "tCWL",
+          "kind": "value",
+          "tuned": "36",
+          "tuned_label": "",
+          "help": "DRAM CAS# Write Latency",
+          "identities": [
+            "1269:D5D:02",
+            "12B9:DC7:02"
+          ]
+        },
+        {
+          "name": "tCKE",
+          "kind": "value",
+          "tuned": "4",
+          "tuned_label": "",
+          "help": "CKE minimum pluse width.",
+          "identities": [
+            "126B:D5F:02",
+            "12BB:DC9:02"
+          ]
+        },
+        {
+          "name": "tRDRDSG",
+          "kind": "value",
+          "tuned": "16",
+          "tuned_label": "",
+          "help": "Back to back READ to READ from different rank separation parameter.",
+          "identities": [
+            "1272:D61:02",
+            "12C2:DCB:02"
+          ]
+        },
+        {
+          "name": "tRDRDDG",
+          "kind": "value",
+          "tuned": "8",
+          "tuned_label": "",
+          "help": "Back to back READ to READ from different DIMM separation parameter.",
+          "identities": [
+            "1273:D63:02",
+            "12C3:DCD:02"
+          ]
+        },
+        {
+          "name": "tRDRDDR",
+          "kind": "value",
+          "tuned": "4",
+          "tuned_label": "",
+          "help": "Back to back READ to READ from different rank separation parameter.",
+          "identities": [
+            "1274:D65:02",
+            "12C4:DCF:02"
+          ]
+        },
+        {
+          "name": "tRDRDDD",
+          "kind": "value",
+          "tuned": "4",
+          "tuned_label": "",
+          "help": "Back to back READ to READ from different DIMM separation parameter.",
+          "identities": [
+            "1275:D67:02",
+            "12C5:DD1:02"
+          ]
+        },
+        {
+          "name": "tWRWRSG",
+          "kind": "value",
+          "tuned": "16",
+          "tuned_label": "",
+          "help": "Back to back WRITE to WRITE from different rank separation parameter.",
+          "identities": [
+            "1276:D69:02",
+            "12C6:DD3:02"
+          ]
+        },
+        {
+          "name": "tWRWRDG",
+          "kind": "value",
+          "tuned": "8",
+          "tuned_label": "",
+          "help": "Back to back WRITE to WRITE from different DIMM separation parameter.",
+          "identities": [
+            "1277:D6B:02",
+            "12C7:DD5:02"
+          ]
+        },
+        {
+          "name": "tWRWRDR",
+          "kind": "value",
+          "tuned": "4",
+          "tuned_label": "",
+          "help": "Back to back WRITE to WRITE from different rank separation parameter.",
+          "identities": [
+            "1278:D6D:02",
+            "12C8:DD7:02"
+          ]
+        },
+        {
+          "name": "tWRWRDD",
+          "kind": "value",
+          "tuned": "4",
+          "tuned_label": "",
+          "help": "Back to back WRITE to WRITE from different DIMM separation parameter.",
+          "identities": [
+            "1279:D6F:02",
+            "12C9:DD9:02"
+          ]
+        },
+        {
+          "name": "tRDWRSG",
+          "kind": "value",
+          "tuned": "20",
+          "tuned_label": "",
+          "help": "Back to back READ to WRITE from different rank separation parameter.",
+          "identities": [
+            "127A:D79:02",
+            "12CA:DE3:02"
+          ]
+        },
+        {
+          "name": "tRDWRDG",
+          "kind": "value",
+          "tuned": "20",
+          "tuned_label": "",
+          "help": "Back to back READ to WRITE from different DIMM separation parameter.",
+          "identities": [
+            "127B:D7B:02",
+            "12CB:DE5:02"
+          ]
+        },
+        {
+          "name": "tRDWRDR",
+          "kind": "value",
+          "tuned": "4",
+          "tuned_label": "",
+          "help": "Back to back READ to WRITE from different rank separation parameter.",
+          "identities": [
+            "127C:D7D:02",
+            "12CC:DE7:02"
+          ]
+        },
+        {
+          "name": "tRDWRDD",
+          "kind": "value",
+          "tuned": "4",
+          "tuned_label": "",
+          "help": "Back to back READ to WRITE from different DIMM separation parameter.",
+          "identities": [
+            "127D:D7F:02",
+            "12CD:DE9:02"
+          ]
+        },
+        {
+          "name": "tWRRDSG",
+          "kind": "value",
+          "tuned": "66",
+          "tuned_label": "",
+          "help": "Back to back WRITE to READ from different rank separation parameter.",
+          "identities": [
+            "127E:D71:02",
+            "12CE:DDB:02"
+          ]
+        },
+        {
+          "name": "tWRRDDG",
+          "kind": "value",
+          "tuned": "52",
+          "tuned_label": "",
+          "help": "Back to back WRITE to READ from different DIMM separation parameter.",
+          "identities": [
+            "127F:D73:02",
+            "12CF:DDD:02"
+          ]
+        },
+        {
+          "name": "tWRRDDR",
+          "kind": "value",
+          "tuned": "4",
+          "tuned_label": "",
+          "help": "Back to back WRITE to READ from different rank separation parameter.",
+          "identities": [
+            "1280:D75:02",
+            "12D0:DDF:02"
+          ]
+        },
+        {
+          "name": "tWRRDDD",
+          "kind": "value",
+          "tuned": "4",
+          "tuned_label": "",
+          "help": "Back to back WRITE to READ from different DIMM separation parameter.",
+          "identities": [
+            "1281:D77:02",
+            "12D1:DE1:02"
+          ]
+        },
+        {
+          "name": "tWRPRE",
+          "kind": "value",
+          "tuned": "92",
+          "tuned_label": "",
+          "help": "tWRPRE",
+          "identities": [
+            "1285:D91:02",
+            "12D5:DFB:02"
+          ]
+        },
+        {
+          "name": "tRDPRE",
+          "kind": "value",
+          "tuned": "12",
+          "tuned_label": "",
+          "help": "tRDPRE",
+          "identities": [
+            "1286:DA9:02",
+            "12D6:E13:02"
+          ]
+        },
+        {
+          "name": "tXP",
+          "kind": "value",
+          "tuned": "4",
+          "tuned_label": "",
+          "help": "tXP",
+          "identities": [
+            "1289:D81:02",
+            "12D9:DEB:02"
+          ]
+        },
+        {
+          "name": "tRDPDEN",
+          "kind": "value",
+          "tuned": "12",
+          "tuned_label": "",
+          "help": "tRDPDEN",
+          "identities": [
+            "128C:D97:02",
+            "12DC:E01:02"
+          ]
+        },
+        {
+          "name": "tWRPDEN",
+          "kind": "value",
+          "tuned": "92",
+          "tuned_label": "",
+          "help": "tWRPDEN",
+          "identities": [
+            "128D:D99:02",
+            "12DD:E03:02"
+          ]
+        },
+        {
+          "name": "Vddq Training",
+          "kind": "options",
+          "tuned": "01",
+          "tuned_label": "Disabled",
+          "help": "Vddq Training",
+          "identities": [
+            "1470:EFE:01"
+          ]
+        },
+        {
+          "name": "Round Trip Latency",
+          "kind": "options",
+          "tuned": "01",
+          "tuned_label": "Disabled",
+          "help": "Round Trip Latency Training",
+          "identities": [
+            "1477:F05:01"
+          ]
+        },
+        {
+          "name": "VDD Current Limit",
+          "kind": "options",
+          "tuned": "03",
+          "tuned_label": "Max",
+          "help": "Sets VDD Current Limit item.",
+          "identities": [
+            "1483:FB9:01"
+          ]
+        },
+        {
+          "name": "VDD Switching Frequency",
+          "kind": "options",
+          "tuned": "30",
+          "tuned_label": "1500 KHz",
+          "help": "Sets VDD Switching Frequency item.",
+          "identities": [
+            "1485:FB4:01"
+          ]
+        },
+        {
+          "name": "VDDQ Current Limit",
+          "kind": "options",
+          "tuned": "03",
+          "tuned_label": "Max",
+          "help": "Sets VDDQ Current Limit item.",
+          "identities": [
+            "1486:FBA:01"
+          ]
+        },
+        {
+          "name": "VDDQ Switching Frequency",
+          "kind": "options",
+          "tuned": "30",
+          "tuned_label": "1500 KHz",
+          "help": "Sets VDDQ Switching Frequency item.",
+          "identities": [
+            "1488:FB6:01"
+          ]
+        },
+        {
+          "name": "VPP Current Limit",
+          "kind": "options",
+          "tuned": "03",
+          "tuned_label": "Max",
+          "help": "Sets VPP Current Limit item.",
+          "identities": [
+            "1489:FBB:01"
+          ]
+        },
+        {
+          "name": "VPP Switching Frequency",
+          "kind": "options",
+          "tuned": "03",
+          "tuned_label": "1500 KHz",
+          "help": "Sets VPP Switching Frequency item.",
+          "identities": [
+            "148B:FB8:01"
+          ]
+        },
+        {
+          "name": "SA GV (Disabled)",
+          "kind": "options",
+          "tuned": "00",
+          "tuned_label": "Disabled",
+          "help": "System Agent Geyserville. Can disable, fix to a specific point, or enable frequency switching.",
+          "identities": [
+            "276D:1F1:01"
+          ]
+        },
+        {
+          "name": "tRFC",
+          "kind": "value",
+          "tuned": "0",
+          "tuned_label": "",
+          "help": "Min Refresh Recovery Delay Time, 0: AUTO, max: 1023",
+          "identities": [
+            "277B:11:02"
+          ]
+        },
+        {
+          "name": "tRTP",
+          "kind": "value",
+          "tuned": "0",
+          "tuned_label": "",
+          "help": "Min Internal Read to Precharge Command Delay Time, 0: AUTO, max: 15. DDR4 legal values: 5, 6, 7, 8, 9, 10, 12",
+          "identities": [
+            "277D:14:01",
+            "1264:D59:02",
+            "1266:DAD:02",
+            "12B4:DC3:02",
+            "12B6:E17:02"
+          ]
+        },
+        {
+          "name": "tWR",
+          "kind": "value",
+          "tuned": "0",
+          "tuned_label": "",
+          "help": "Min Write Recovery Time, 0: AUTO",
+          "identities": [
+            "277E:15:01",
+            "125C:D53:02",
+            "125E:DAB:02",
+            "12AC:DBD:02",
+            "12AE:E15:02"
+          ]
+        },
+        {
+          "name": "tWTR",
+          "kind": "value",
+          "tuned": "0",
+          "tuned_label": "",
+          "help": "Min Internal Write to Read Command Delay Time, 0: AUTO, max: 28",
+          "identities": [
+            "277F:16:01",
+            "1260:D55:02",
+            "12B0:DBF:02"
+          ]
+        },
+        {
+          "name": "tRFC4",
+          "kind": "value",
+          "tuned": "0",
+          "tuned_label": "",
+          "help": "Min Internal Write to Read Command Delay Time, 0: AUTO, max: 15000",
+          "identities": [
+            "2782:438:02"
+          ]
+        },
+        {
+          "name": "tRRD_S",
+          "kind": "value",
+          "tuned": "0",
+          "tuned_label": "",
+          "help": "Min Internal Write to Read Command Delay Time, 0: AUTO, max: 80",
+          "identities": [
+            "2784:43B:01"
+          ]
+        },
+        {
+          "name": "tWTR_L",
+          "kind": "value",
+          "tuned": "0",
+          "tuned_label": "",
+          "help": "Min Internal Write to Read Command Delay Time, 0: AUTO, max: 127",
+          "identities": [
+            "2785:43C:01",
+            "1261:D87:02",
+            "12B1:DF1:02"
+          ]
+        },
+        {
+          "name": "tCCD_L",
+          "kind": "value",
+          "tuned": "0",
+          "tuned_label": "",
+          "help": "Min Internal Write to Read Command Delay Time, 0: AUTO, max: 80",
+          "identities": [
+            "2786:43D:01",
+            "126D:D8B:02",
+            "12BD:DF5:02"
+          ]
+        },
+        {
+          "name": "tWTR_S",
+          "kind": "value",
+          "tuned": "0",
+          "tuned_label": "",
+          "help": "Min Internal Write to Read Command Delay Time, 0: AUTO, max: 50",
+          "identities": [
+            "2787:43E:01"
+          ]
+        },
+        {
+          "name": "Extreme Memory Profile(XMP)",
+          "kind": "options",
+          "tuned": "00",
+          "tuned_label": "Disabled",
+          "help": "XMP (Extreme Memory Profile) is the overclocking technology by memory module.",
+          "identities": [
+            "2973:E66:01"
+          ]
+        },
+        {
+          "name": "Memory Try It!",
+          "kind": "options",
+          "tuned": "00",
+          "tuned_label": "Disabled",
+          "help": "Memory Try It! can improve memory compatibility or performance by choosing optimized memory preset.",
+          "identities": [
+            "294E:F16:01",
+            "2952:F17:01",
+            "2956:F18:01",
+            "295A:F19:01",
+            "295D:F1A:01",
+            "295E:F1B:01",
+            "2960:F1C:01"
+          ]
+        },
+        {
+          "name": "SA GV (Auto)",
+          "kind": "options",
+          "tuned": "06",
+          "tuned_label": "Auto",
+          "help": "System Agent Geyserville for adjusting memory frequency dynamically by different system conditions.",
+          "identities": [
+            "124B:F2A:01"
+          ]
+        },
+        {
+          "name": "tCCD",
+          "kind": "value",
+          "tuned": "15",
+          "tuned_label": "",
+          "help": "Back to back READ to READ CAS to CAS from same rank separation parameter.",
+          "identities": [
+            "126C:D89:02",
+            "12BC:DF3:02"
+          ]
+        },
+        {
+          "name": "tMOD",
+          "kind": "value",
+          "tuned": "0",
+          "tuned_label": "",
+          "help": "tMOD",
+          "identities": [
+            "1293:DA5:02",
+            "12E3:E0F:02"
+          ]
+        }
+      ]
+    },
+    {
+      "title": "GPU / PCIe",
+      "settings": [
+        {
+          "name": "PCIe Native Power Management",
+          "kind": "options",
+          "tuned": "00",
+          "tuned_label": "Disabled",
+          "help": "Enabled for activate ASPM operations of PCIe in OS.",
+          "identities": [
+            "2B:31:01"
+          ]
+        },
+        {
+          "name": "Re-Size BAR Support",
+          "kind": "options",
+          "tuned": "00",
+          "tuned_label": "Disabled",
+          "help": "If system has Resizable BAR capable PCIe Devices, this option Enables or Disables Resizable BAR Support.",
+          "identities": [
+            "51A:10DF:01"
+          ]
+        },
+        {
+          "name": "PCIE Resizable BAR Support",
+          "kind": "options",
+          "tuned": "00",
+          "tuned_label": "Disabled",
+          "help": "Enable/Disable PCIE Resizable BAR Support",
+          "identities": [
+            "9B2:42B:01"
+          ]
+        },
+        {
+          "name": "PCI_E1 Gen Mode",
+          "kind": "options",
+          "tuned": "05",
+          "tuned_label": "Gen5",
+          "help": "Sets PCI Express protocol for matching different installed devices.",
+          "identities": [
+            "9F3:36A:01"
+          ]
+        }
+      ]
+    }
+  ]
+}

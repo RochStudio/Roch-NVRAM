@@ -1,4 +1,4 @@
-# Roch NVRAM 1.0.0
+# Roch NVRAM 1.0.1
 
 Roch NVRAM is a Windows editor for AMI SCEWIN NVRAM exports. It reads the live NVRAM,
 lets you queue setting changes, and writes them only after a backup, a fresh re-export
@@ -70,6 +70,40 @@ tokens, offsets, and export IDs; filter by type or by editable/warning state.
 
 **Queue selected change** (or a double-click) edits an entry. Settings the parser could
 not read unambiguously are greyed out and refused rather than guessed at.
+
+## Quick Settings tab
+
+The overclocking controls of a platform on one page, in three sections: **CPU**, **RAM**,
+and **GPU / PCIe**, so the settings that matter for tuning are together instead of spread
+through 5,000 rows. Each row shows the setting's current value and an editor that starts
+on it; set a new value and press **Queue**. It is the same queue the NVRAM table feeds,
+so Import still runs the preflight, backup, and verification around whatever you queue
+here. No values are suggested: the tab decides what to show, not what to set.
+
+A preset is the list of settings. `assets/quick_settings/msi_z790_ddr5.json` was built
+from a stock export and a tuned export of an MSI Z790 MPOWER: every setting whose value
+differs between the two is a row, plus a standing list in `tools/make_quick_settings.py`
+of controls that belong on the page regardless (Hyper-Threading, XMP, the common timings).
+Rows match the live NVRAM by **token + offset + width**;
+a row the loaded firmware does not have says so and stays disabled. One row can write
+several identities, which is how the per-channel copies of a DDR5 timing become a single
+control.
+
+**Presets are per vendor.** MSI, ASUS, ASRock, and Gigabyte lay their NVRAM out
+differently -- different identities, names, order, and which settings exist at all -- so
+an MSI preset finds nothing on an ASUS board. That is deliberate: matching by name across
+vendors would be guessing, and this program writes firmware. When a loaded export is from
+another family the tab says so at the top, with the count of controls found, instead of
+showing a page of disabled rows. Each vendor gets its own preset, built the same way.
+
+To build one, export once at stock and once tuned on that board, then run
+
+```bash
+py tools/make_quick_settings.py stock.txt tuned.txt --vendor ASUS --board "ROG Maximus Z790 Apex" --name "ASUS Z790 (LGA 1700 DDR5)" --platform asus-z790-ddr5 --out assets/quick_settings/asus_z790_ddr5.json
+```
+
+It sorts the differences into the three sections by name, drops fan curves and other
+changes that are not overclocking controls, and lists anything it could not place.
 
 ## Load NVRAM
 
@@ -146,17 +180,18 @@ Live mode and the tests are unaffected; the tests use their own committed fixtur
 run_tests.bat
 ```
 
-All 56 tests run on a fresh clone. They cover parsing, record order, option and value
+All 79 tests run on a fresh clone. They cover parsing, record order, option and value
 edits, byte-for-byte rewriting, stale-value rejection, profile matching, verification,
-comparison results, CSV export, the catalog and its archiving, the window's own button
-states, and that the version is written in exactly one place.
+comparison results, CSV export, the catalog and its archiving, the Quick Settings presets
+and the tab that queues from them, the window's own button states, and that the version
+is written in exactly one place.
 
 The export they read is committed at `tests/fixtures/nvram.txt`: a small synthetic SCEWIN
 file, not a board dump, keeping the record shapes real ones have. Its parsed profile is
 generated during the run rather than committed beside it, so the two cannot drift apart.
 Nothing in the suite executes SCEWIN or touches firmware.
 
-13 of them need PySide6 and skip cleanly without it, so `run_tests.bat` uses `.venv` when
+24 of them need PySide6 and skip cleanly without it, so `run_tests.bat` uses `.venv` when
 it is there and falls back to the system interpreter with a note when it is not.
 
 ## Building
