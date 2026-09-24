@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.0.2
+
+- Added matching dark and light styling throughout the editor, including the native
+  Windows title bar and a sun/moon button beside the app name. The choice is saved.
+- Added YouTube, X, and Discord links in the bottom-left footer.
+- Load NVRAM now skips ambiguous duplicate identities in a saved export instead of
+  choosing one record to queue.
+
 ## 1.0.1
 
 ### Quick Settings

@@ -17,6 +17,7 @@
 from __future__ import annotations
 
 import sys
+from collections import Counter
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Any, NamedTuple
@@ -25,10 +26,11 @@ from PySide6.QtCore import (
     QAbstractTableModel,
     QModelIndex,
     QSortFilterProxyModel,
+    QSettings,
     Qt,
     QUrl,
 )
-from PySide6.QtGui import QAction, QBrush, QColor, QDesktopServices, QFont, QIcon
+from PySide6.QtGui import QAction, QBrush, QDesktopServices, QFont, QIcon
 from PySide6.QtWidgets import (
     QApplication,
     QComboBox,
@@ -82,7 +84,22 @@ from .core import (
     write_transaction,
 )
 from .scewin_backend import ApplyResult, LiveExport, ScewinBackend
-from .version import APP_NAME
+from .theme import apply_theme, semantic_color, sync_title_bar
+from .version import APP_NAME, __version__
+
+
+SOCIAL_LINKS = (
+    ("YouTube", "https://www.youtube.com/@MateoPcTech"),
+    ("X", "https://x.com/MateoPCTech"),
+    ("Discord", "https://discord.gg/KfzExpKQHB"),
+)
+
+
+def set_tone(widget: QLabel, tone: str) -> None:
+    """Update a semantic label color when its meaning changes at runtime."""
+    widget.setProperty("tone", tone)
+    widget.style().unpolish(widget)
+    widget.style().polish(widget)
 
 
 def asset_path(name: str) -> Path:
@@ -207,9 +224,9 @@ class SettingsModel(QAbstractTableModel):
         if role == Qt.ForegroundRole:
             editable, _ = ScewinDocument.is_editable(setting)
             if not editable:
-                return QBrush(QColor("#888888"))
+                return QBrush(semantic_color("muted"))
             if change:
-                return QBrush(QColor("#d97706"))
+                return QBrush(semantic_color("queued"))
 
         if role == Qt.FontRole and change:
             font = QFont()
@@ -355,7 +372,7 @@ class CompareModel(QAbstractTableModel):
         if role in (Qt.DisplayRole, Qt.ToolTipRole):
             return values[index.column()]
         if role == Qt.ForegroundRole and row.changed:
-            return QBrush(QColor("#b45309"))
+            return QBrush(semantic_color("warning"))
         if role == Qt.FontRole and row.changed:
             font = QFont()
             font.setBold(True)
@@ -522,7 +539,7 @@ class EditDialog(QDialog):
             if live_mode
             else "Dry run: this queues a change but does not write firmware."
         )
-        warning.setStyleSheet("font-weight: 600; color: #b45309;")
+        warning.setObjectName("warningText")
         layout.addWidget(warning)
 
         buttons = QDialogButtonBox(QDialogButtonBox.Save | QDialogButtonBox.Cancel)
@@ -584,8 +601,8 @@ class MainWindow(QMainWindow):
         self.quick_rows: list[QuickRow] = []
 
         self.setWindowTitle(
-            APP_NAME if self.live_mode
-            else f"{APP_NAME} — Dry Run"
+            f"{APP_NAME} {__version__}" if self.live_mode
+            else f"{APP_NAME} {__version__} — Dry Run"
         )
         icon = app_icon()
         if icon is not None:
@@ -610,21 +627,76 @@ class MainWindow(QMainWindow):
         transaction_action.triggered.connect(self.export_transaction)
         menu.addAction(transaction_action)
 
+        view_menu = self.menuBar().addMenu("View")
+        self.dark_mode_action = QAction("Dark mode", self)
+        self.dark_mode_action.setCheckable(True)
+        self.dark_mode_action.setChecked(bool(QApplication.instance().property("dark_mode")))
+        self.dark_mode_action.toggled.connect(self._set_dark_mode)
+        view_menu.addAction(self.dark_mode_action)
+
+    def _set_dark_mode(self, dark: bool) -> None:
+        apply_theme(QApplication.instance(), dark)
+        sync_title_bar(self)
+        QSettings().setValue("darkMode", dark)
+        self._update_theme_button()
+        self.settings_model.refresh()
+        self.compare_model.set_rows(self.compare_model.rows)
+        self._refresh_quick_rows()
+
+    def showEvent(self, event) -> None:
+        super().showEvent(event)
+        sync_title_bar(self)
+
+    def _update_theme_button(self) -> None:
+        dark = self.dark_mode_action.isChecked()
+        self.theme_button.setText("☀" if dark else "☾")
+        action = "light" if dark else "dark"
+        self.theme_button.setToolTip(f"Switch to {action} mode")
+        self.theme_button.setAccessibleName(f"Switch to {action} mode")
+
+    @staticmethod
+    def _accent(button: QPushButton) -> QPushButton:
+        button.setProperty("accent", True)
+        return button
+
     def _build_ui(self):
         root = QWidget()
         root_layout = QVBoxLayout(root)
+        root_layout.setContentsMargins(14, 11, 14, 11)
+        root_layout.setSpacing(9)
+
+        brand_row = QHBoxLayout()
+        brand_mark = QLabel()
+        icon = app_icon()
+        if icon is not None:
+            brand_mark.setPixmap(icon.pixmap(18, 18))
+        else:
+            brand_mark.setText("▼")
+        brand_mark.setObjectName("brandMark")
+        brand_row.addWidget(brand_mark)
+        brand = QLabel(f"ROCH NVRAM  {__version__}")
+        brand.setObjectName("brand")
+        brand_row.addWidget(brand)
+        brand_row.addStretch(1)
+        self.theme_button = QPushButton()
+        self.theme_button.setObjectName("themeToggle")
+        self.theme_button.setFixedSize(32, 30)
+        self.theme_button.clicked.connect(
+            lambda: self.dark_mode_action.setChecked(not self.dark_mode_action.isChecked())
+        )
+        self._update_theme_button()
+        brand_row.addWidget(self.theme_button)
+        root_layout.addLayout(brand_row)
 
         if not self.live_mode:
             banner = QLabel(
                 "DRY RUN ONLY — This build never executes SCEWIN and never writes firmware variables."
             )
-            banner.setStyleSheet(
-                "padding: 10px; font-weight: 700; background: #fff7ed; color: #9a3412;"
-            )
+            banner.setObjectName("modeBanner")
             root_layout.addWidget(banner)
 
         self.profile_line = QLabel()
-        self.profile_line.setStyleSheet("font-weight: 600; padding: 4px;")
+        self.profile_line.setObjectName("profileLine")
         self._update_profile_line()
         root_layout.addWidget(self.profile_line)
 
@@ -650,6 +722,24 @@ class MainWindow(QMainWindow):
         tabs.addTab(self._compare_tab(), "Compare")
         tabs.addTab(self._log_tab(), "Log")
         root_layout.addWidget(tabs, 1)
+
+        footer = QHBoxLayout()
+        footer.setSpacing(5)
+        for index, (name, address) in enumerate(SOCIAL_LINKS):
+            if index:
+                divider = QLabel("|")
+                divider.setObjectName("footerDivider")
+                footer.addWidget(divider)
+            link = QPushButton(name)
+            link.setProperty("social", True)
+            link.setCursor(Qt.PointingHandCursor)
+            link.setToolTip(address)
+            link.clicked.connect(
+                lambda _=False, url=address: QDesktopServices.openUrl(QUrl(url))
+            )
+            footer.addWidget(link)
+        footer.addStretch(1)
+        root_layout.addLayout(footer)
 
         self.setCentralWidget(root)
 
@@ -684,7 +774,7 @@ class MainWindow(QMainWindow):
             )
             export_button.clicked.connect(self.export_live_nvram)
             buttons.addWidget(export_button)
-            import_button = QPushButton("Import")
+            import_button = self._accent(QPushButton("Import"))
             import_button.setToolTip(
                 "Write the queued changes through SCEWIN. A backup and a "
                 "verification pass run around the import."
@@ -692,7 +782,7 @@ class MainWindow(QMainWindow):
             import_button.clicked.connect(self.apply_changes)
             self.loaded_buttons.append(import_button)
             buttons.addWidget(import_button)
-        edit = QPushButton("Queue selected change")
+        edit = self._accent(QPushButton("Queue selected change"))
         edit.clicked.connect(self.edit_selected)
         self.loaded_buttons.append(edit)
         buttons.addWidget(edit)
@@ -737,7 +827,7 @@ class MainWindow(QMainWindow):
         buttons.addWidget(transaction)
         buttons.addWidget(export)
         if self.live_mode:
-            import_button = QPushButton("Import")
+            import_button = self._accent(QPushButton("Import"))
             import_button.setToolTip(
                 "Write the queued changes through SCEWIN. A backup and a "
                 "verification pass run around the import."
@@ -778,7 +868,7 @@ class MainWindow(QMainWindow):
             "Select NVRAM 1 and NVRAM 2. Changed settings are shown by default."
         )
         self.compare_summary.setWordWrap(True)
-        self.compare_summary.setStyleSheet("font-weight: 600; padding: 4px;")
+        self.compare_summary.setObjectName("profileLine")
         layout.addWidget(self.compare_summary)
 
         controls = QHBoxLayout()
@@ -828,7 +918,7 @@ class MainWindow(QMainWindow):
             "each time the tool starts and whenever another NVRAM export is loaded."
         )
         intro.setWordWrap(True)
-        intro.setStyleSheet("font-weight: 600; padding: 4px;")
+        intro.setObjectName("profileLine")
         layout.addWidget(intro)
         path_label = QLabel(f"Catalog file: {self.catalog.catalog_path}")
         path_label.setTextInteractionFlags(Qt.TextSelectableByMouse)
@@ -849,7 +939,7 @@ class MainWindow(QMainWindow):
         self.catalog_table.scrollToTop()
 
         hint = QLabel("Double-click a row to open the archived nvram.txt for that capture.")
-        hint.setStyleSheet("color: #6b7280; padding: 2px;")
+        hint.setObjectName("mutedText")
         layout.addWidget(hint)
 
         buttons = QHBoxLayout()
@@ -894,7 +984,7 @@ class MainWindow(QMainWindow):
 
         self.quick_notice = QLabel()
         self.quick_notice.setWordWrap(True)
-        self.quick_notice.setStyleSheet("font-weight: 600; padding: 4px;")
+        self.quick_notice.setObjectName("profileLine")
         layout.addWidget(self.quick_notice)
 
         self.quick_scroll = QScrollArea()
@@ -941,13 +1031,11 @@ class MainWindow(QMainWindow):
             "Set a new value and press Queue, then review under Pending Changes and "
             "press Import."
         )
-        plain = "font-weight: 600; padding: 4px;"
-        warn = plain + " color: #b45309;"
         if not loaded:
-            text, style = (
+            text, tone = (
                 f"{preset.name}: {total} controls. "
                 "No NVRAM loaded: current values appear after you press Export.",
-                plain,
+                "normal",
             )
         else:
             # Identities are one vendor's layout. Say so up front when the loaded
@@ -955,27 +1043,27 @@ class MainWindow(QMainWindow):
             # disabled rows and leaving the reason to the tooltips.
             available = sum(1 for _section, rows in groups for row in rows if row.available)
             if available == 0:
-                text, style = (
+                text, tone = (
                     f"{preset.name} does not match the loaded NVRAM: 0 of {total} controls "
                     f"were found. It was built from {origin}. MSI, ASUS, ASRock, and Gigabyte "
                     "firmware lay their settings out differently, so each vendor needs a preset "
                     "built from its own stock and tuned exports (tools/make_quick_settings.py). "
                     "Nothing here can be queued.",
-                    warn,
+                    "warning",
                 )
             elif available < total:
-                text, style = (
+                text, tone = (
                     f"{preset.name}: {available} of {total} controls apply to the loaded NVRAM; "
                     f"the rest are not on this board or are blocked. {how_to}",
-                    plain,
+                    "normal",
                 )
             else:
-                text, style = (
+                text, tone = (
                     f"{preset.name}: all {total} controls apply. {how_to}",
-                    plain,
+                    "normal",
                 )
         self.quick_notice.setText(text)
-        self.quick_notice.setStyleSheet(style)
+        set_tone(self.quick_notice, tone)
 
         for section, rows in groups:
             group = QGroupBox(section.title)
@@ -984,7 +1072,7 @@ class MainWindow(QMainWindow):
                 grid.setColumnStretch(column, stretch)
             for column, text in enumerate(("Setting", "Current", "New value")):
                 header = QLabel(text)
-                header.setStyleSheet("font-weight: 600; color: #6b7280;")
+                header.setObjectName("mutedText")
                 grid.addWidget(header, 0, column)
 
             for position, resolved in enumerate(rows, start=1):
@@ -1012,7 +1100,7 @@ class MainWindow(QMainWindow):
                 else:
                     editor = QLineEdit()
                     editor.setPlaceholderText("Decimal or 0x-prefixed hexadecimal")
-                button = QPushButton("Queue")
+                button = self._accent(QPushButton("Queue"))
                 state = QLabel()
                 row = QuickRow(resolved, current, editor, button, state)
                 row.show_current()
@@ -1042,17 +1130,17 @@ class MainWindow(QMainWindow):
             # A blocked row has no targets either, so test blocked first or a
             # kind mismatch reads as the setting being absent.
             if not loaded:
-                text, color = "", ""
+                text, tone = "", "normal"
             elif resolved.blocked:
-                text, color = "blocked", "#b45309"
+                text, tone = "blocked", "warning"
             elif not resolved.targets:
-                text, color = "not on this board", "#6b7280"
+                text, tone = "not on this board", "muted"
             elif queued:
-                text, color = f"queued → {queued[0].new_display}", "#d97706"
+                text, tone = f"queued → {queued[0].new_display}", "queued"
             else:
-                text, color = "", ""
+                text, tone = "", "normal"
             row.state.setText(text)
-            row.state.setStyleSheet(f"color: {color};" if color else "")
+            set_tone(row.state, tone)
 
     def _queue_quick(
         self, requests: list[tuple[ResolvedSetting, str]], via: str
@@ -1252,11 +1340,9 @@ class MainWindow(QMainWindow):
                 f" WARNING: HII CRC differs ({result.stock.hii_crc32} vs "
                 f"{result.overclocked.hii_crc32}); offsets may not describe the same BIOS build."
             )
-            self.compare_summary.setStyleSheet(
-                "font-weight: 600; padding: 4px; color: #b45309;"
-            )
+            set_tone(self.compare_summary, "warning")
         else:
-            self.compare_summary.setStyleSheet("font-weight: 600; padding: 4px;")
+            set_tone(self.compare_summary, "normal")
 
         self.compare_summary.setText(
             f"Compared {len(result.rows):,} records: {result.changed_count:,} changed or "
@@ -1578,9 +1664,20 @@ class MainWindow(QMainWindow):
         normal pending change, so the preflight, backup, and verification path
         still applies to everything Load NVRAM queues.
         """
-        current_by_identity = {
-            identity_without_crc(setting): setting for setting in self.profile.settings
-        }
+        current_by_identity: dict[str, dict[str, Any]] = {}
+        ambiguous_current: set[str] = set()
+        for setting in self.profile.settings:
+            key = identity_without_crc(setting)
+            if not has_identity(key):
+                continue
+            if key in current_by_identity:
+                ambiguous_current.add(key)
+            else:
+                current_by_identity[key] = setting
+        saved_counts = Counter(
+            key for setting in snapshot.settings
+            if has_identity(key := identity_without_crc(setting))
+        )
         queued: list[PendingChange] = []
         blocked: list[str] = []
         missing = 0
@@ -1592,8 +1689,11 @@ class MainWindow(QMainWindow):
             if not has_identity(key) or key in seen:
                 continue
             seen.add(key)
-            current = current_by_identity.get(key)
             name = str(saved.get("question") or "N/A")
+            if saved_counts[key] > 1 or key in ambiguous_current:
+                blocked.append(f"{name}: ambiguous token/offset/width identity")
+                continue
+            current = current_by_identity.get(key)
             if current is None:
                 missing += 1
                 continue
@@ -1831,7 +1931,9 @@ def run(
 ) -> int:
     app = QApplication(sys.argv)
     app.setApplicationName(APP_NAME)
-    app.setApplicationDisplayName(APP_NAME)
+    app.setApplicationDisplayName(f"{APP_NAME} {__version__}")
+    app.setOrganizationName("Roch Studio")
+    apply_theme(app, QSettings().value("darkMode", True, type=bool))
     icon = app_icon()
     if icon is not None:
         app.setWindowIcon(icon)

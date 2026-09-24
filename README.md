@@ -1,4 +1,4 @@
-# Roch NVRAM 1.0.1
+# Roch NVRAM 1.0.2
 
 Roch NVRAM is a Windows editor for AMI SCEWIN NVRAM exports. It reads the live NVRAM,
 lets you queue setting changes, and writes them only after a backup, a fresh re-export
@@ -34,6 +34,11 @@ The window opens with nothing loaded and does not touch the firmware. Press **Ex
 to read the live settings. The administrator prompt appears at launch rather than on
 demand because SCEWIN needs those rights the moment you press Export or Import, and a
 running process cannot elevate itself.
+
+The interface starts in dark mode, styled to match Roch GPU's charcoal panels and red
+accents. Use the sun/moon button beside the title or **View → Dark mode** to switch
+themes; the choice is saved, and the Windows title bar follows it. YouTube, X, and
+Discord links sit in the bottom-left footer.
 
 ## Export and Import
 

@@ -176,6 +176,19 @@ Value\t= <2>
             self.assertEqual(len(diff.blocked), 1)
             self.assertIn("type differs", diff.blocked[0])
 
+    def test_duplicate_saved_identity_is_blocked_rather_than_queued(self):
+        with tempfile.TemporaryDirectory() as temp:
+            changed = RECORDS.replace("Options\t=*[00]Auto", "Options\t=[00]Auto").replace(
+                "\t[02]Manual", "\t*[02]Manual"
+            )
+            duplicate = changed + changed.split("Setup Question\t= Board Label")[0]
+            diff = self.differences(Path(temp), duplicate)
+
+            self.assertEqual(diff.queued, [])
+            self.assertEqual(diff.already, 1)
+            self.assertEqual(len(diff.blocked), 1)
+            self.assertIn("ambiguous", diff.blocked[0])
+
 
 @unittest.skipUnless(GUI_AVAILABLE, "PySide6 is not installed")
 class StartupTests(unittest.TestCase):
